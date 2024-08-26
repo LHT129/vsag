@@ -181,7 +181,7 @@ include (extern/cpuinfo/cpuinfo.cmake)
 include (extern/fmt/fmt.cmake)
 include (extern/thread_pool/thread_pool.cmake)
 include (extern/roaringbitmap/roaringbitmap.cmake)
-
+include_directories("/home/tianlan.lht/code/github/github-vsag/LightGBM/include")
 # thirdparties of tools
 if (ENABLE_TOOLS)
     include (extern/hdf5/hdf5.cmake)
@@ -286,3 +286,5 @@ add_custom_target (version
                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersionHeader.cmake
   )
 add_dependencies (vsag version)
+
+add_executable(gbmtest testgbm.cpp header.cpp)

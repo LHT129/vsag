@@ -31,10 +31,12 @@
 #include <random>
 #include <stdexcept>
 #include <unordered_set>
+#include "../../../LightGBM/include/LightGBM/c_api.h"
 
 #include "../../default_allocator.h"
 #include "hnswlib.h"
 #include "visited_list_pool.h"
+#include "header.h"
 
 namespace hnswlib {
 typedef unsigned int tableint;
@@ -76,6 +78,7 @@ private:
     std::mutex global;
     std::vector<std::recursive_mutex> link_list_locks_;
 
+
     tableint enterpoint_node_{0};
 
     size_t size_links_level0_{0};
@@ -114,9 +117,19 @@ private:
     float alpha_;
     uint32_t po_;
     uint32_t pl_;
+public:
+    std::ofstream* off_{nullptr};
+    bool enableOF_ = false;
+    std::vector<float> features;
+    BoosterHandle handle_;
+    int p_ = 1;
 
 public:
     HierarchicalNSW(SpaceInterface* s) {
+    }
+
+    void setEnableToFile(bool fe) override {
+        this->enableOF_ = fe;
     }
 
     HierarchicalNSW(SpaceInterface* s,
@@ -160,6 +173,7 @@ public:
         ef_construction_ = std::max(ef_construction, M_);
         ef_ = 10;
 
+
         element_levels_ = (int*)allocator->Allocate(max_elements * sizeof(int));
 
         level_generator_.seed(random_seed);
@@ -170,6 +184,8 @@ public:
         offsetData_ = size_links_level0_;
         label_offset_ = size_links_level0_ + data_size_;
         offsetLevel0_ = 0;
+
+        LGBM_BoosterCreateFromModelfile("/home/tianlan.lht/code/github/github-vsag/model2.txt", &p_, &handle_);
 
         if (use_reversed_edges_) {
             reversed_level0_link_list_ = (std::unordered_set<tableint>**)allocator->Allocate(
@@ -234,6 +250,20 @@ public:
         delete visited_list_pool_;
     }
 
+    double Predict(std::vector<float>& features2) {
+
+        Entry* en = new Entry[features2.size()];
+        for (int i = 0; i < features2.size(); ++ i) {
+            en[i].fvalue = features2[i];
+        }
+
+        std::vector<double> out(1, 0);
+        double* out_result = static_cast<double*>(out.data());
+
+        predict(en, 0, out_result);
+        return out[0];
+    }
+
     double
     INT8_InnerProduct_impl(const void* pVect1, const void* pVect2, size_t qty) const {
         int8_t* vec1 = (int8_t*)pVect1;
@@ -294,6 +324,10 @@ public:
 #else
         return INT8_InnerProduct_impl(pVect1v, pVect2v, qty);
 #endif
+    }
+
+    std::vector<float> GetFeatures() override {
+        return this->features;
     }
 
     double
@@ -1187,7 +1221,7 @@ public:
     searchBaseLayerST(tableint ep_id,
                       const void* data_point,
                       size_t ef,
-                      BaseFilterFunctor* isIdAllowed = nullptr) const {
+                      BaseFilterFunctor* isIdAllowed = nullptr) {
         VisitedList* vl = visited_list_pool_->getFreeVisitedList();
         vl_type* visited_array = vl->mass;
         vl_type visited_array_tag = vl->curV;
@@ -1246,13 +1280,41 @@ public:
         uint32_t hops = 0;
         uint32_t dist_cmp = 0;
         std::vector<int> to_be_visited(M_ * 2);
-
+        int vsCnt = 0;
+        int goodCnt = 0;
         while (!candidate_set.empty()) {
             hops++;
             std::pair<float, tableint> current_node_pair = candidate_set.top();
-
+            if (hops == 40) {
+                features.clear();
+//                int N = 79;
+//                auto features2 = top_candidates;
+//                this->features.emplace_back(features2.size());
+//                while (N >= 0 && !features2.empty()) {
+//
+//                    if (N > 78 || N < 2) {
+//                        auto value = features2.top().first;
+//                        this->features.emplace_back(value);
+//                    }
+//
+//                    features2.pop();
+//                    --N;
+//                }
+                features.emplace_back(top_candidates.top().first);
+                features.emplace_back(-current_node_pair.first);
+                features.emplace_back(dist_cmp);
+                features.emplace_back(vsCnt);
+                features.emplace_back(goodCnt);
+//                auto t1 = std::chrono::high_resolution_clock::now();
+                auto pre = Predict(features);
+//                auto t2 = std::chrono::high_resolution_clock::now();
+//                std::cout << "predict cost: \t" << std::chrono::duration<double>(t2 - t1).count() << std::endl;
+                if (pre < 0.45) {
+                    ef=40;
+                }
+            }
             if ((-current_node_pair.first) > lowerBound &&
-                (top_candidates.size() == ef || (!isIdAllowed && !has_deletions))) {
+                (top_candidates.size() >= ef || (!isIdAllowed && !has_deletions))) {
                 break;
             }
             candidate_set.pop();
@@ -1260,6 +1322,9 @@ public:
             uint32_t count_no_visited = visit(
                 current_node_pair, next_node_pair, visited_array, visited_array_tag, to_be_visited);
             dist_cmp += count_no_visited;
+            int* data = (int*)get_linklist0(current_node_pair.second);
+            size_t size = getListCount((linklistsizeint*)data);
+            vsCnt += size - count_no_visited;
 
             for (size_t j = 0; j < this->po_; j++) {
                 auto vector_data_ptr = (uint8_t*)get_encoded_data(to_be_visited[j], code_size + 8);
@@ -1296,8 +1361,11 @@ public:
 
                     top_candidates.emplace(dist, candidate_id);
 
-                    if (top_candidates.size() > ef)
+                    while (top_candidates.size() > ef) {
                         top_candidates.pop();
+                        goodCnt ++;
+                    }
+
 
                     if (!top_candidates.empty())
                         lowerBound = top_candidates.top().first;
@@ -2637,7 +2705,7 @@ public:
     std::priority_queue<std::pair<float, labeltype>>
     searchKnn(const void* query_data,
               size_t k,
-              BaseFilterFunctor* isIdAllowed = nullptr) const override {
+              BaseFilterFunctor* isIdAllowed = nullptr) override {
         std::priority_queue<std::pair<float, labeltype>> result;
         if (cur_element_count_ == 0)
             return result;
