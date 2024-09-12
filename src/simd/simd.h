@@ -16,7 +16,6 @@
 #pragma once
 
 #include <cstdlib>
-
 #include <string>
 
 namespace vsag {

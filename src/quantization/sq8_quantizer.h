@@ -167,11 +167,14 @@ SQ8Quantizer<Metric>::ComputeDistImpl(Computer<SQ8Quantizer>& computer,
     auto* query = reinterpret_cast<float*>(computer.buf_);
 
     if constexpr (Metric == MetricType::METRIC_TYPE_L2SQR) {
-        *dists = SQ8ComputeL2Sqr(query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);
+        *dists =
+            SQ8ComputeL2Sqr(query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);
     } else if constexpr (Metric == MetricType::METRIC_TYPE_IP) {
-        *dists = SQ8ComputeIP(query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);
+        *dists =
+            SQ8ComputeIP(query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);
     } else if constexpr (Metric == MetricType::METRIC_TYPE_COSINE) {
-        *dists = SQ8ComputeIP(query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);  // TODO
+        *dists = SQ8ComputeIP(
+            query, codes, this->lowerBound_.data(), this->diff_.data(), this->dim_);  // TODO
     } else {
         *dists = 0.;
     }

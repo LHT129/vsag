@@ -249,39 +249,40 @@ SQ8ComputeL2Sqr(const float* query,
                 const float* diff,
                 uint64_t dim) {
 #if defined(ENABLE_AVX2)
-        __m256 sum = _mm256_setzero_ps();
-        uint64_t i = 0;
+    __m256 sum = _mm256_setzero_ps();
+    uint64_t i = 0;
 
-        for (; i + 7 < dim; i += 8) {
-            // Load data into registers
-            __m256i code_values = _mm256_cvtepu8_epi32(_mm_loadu_si128(reinterpret_cast<const __m128i*>(codes + i)));
-            __m256 code_floats = _mm256_div_ps(_mm256_cvtepi32_ps(code_values), _mm256_set1_ps(255.0f));
-            __m256 diff_values = _mm256_loadu_ps(diff + i);
-            __m256 lowerBound_values = _mm256_loadu_ps(lowerBound + i);
-            __m256 query_values = _mm256_loadu_ps(query + i);
+    for (; i + 7 < dim; i += 8) {
+        // Load data into registers
+        __m256i code_values =
+            _mm256_cvtepu8_epi32(_mm_loadu_si128(reinterpret_cast<const __m128i*>(codes + i)));
+        __m256 code_floats = _mm256_div_ps(_mm256_cvtepi32_ps(code_values), _mm256_set1_ps(255.0f));
+        __m256 diff_values = _mm256_loadu_ps(diff + i);
+        __m256 lowerBound_values = _mm256_loadu_ps(lowerBound + i);
+        __m256 query_values = _mm256_loadu_ps(query + i);
 
-            // Perform calculations
-            __m256 scaled_codes = _mm256_mul_ps(code_floats, diff_values);
-            scaled_codes = _mm256_add_ps(scaled_codes, lowerBound_values);
-            __m256 val = _mm256_sub_ps(query_values, scaled_codes);
-            val = _mm256_mul_ps(val, val);
-            sum = _mm256_add_ps(sum, val);
-        }
+        // Perform calculations
+        __m256 scaled_codes = _mm256_mul_ps(code_floats, diff_values);
+        scaled_codes = _mm256_add_ps(scaled_codes, lowerBound_values);
+        __m256 val = _mm256_sub_ps(query_values, scaled_codes);
+        val = _mm256_mul_ps(val, val);
+        sum = _mm256_add_ps(sum, val);
+    }
 
-        // Horizontal addition
-        __m128 sum_high = _mm256_extractf128_ps(sum, 1);
-        __m128 sum_low = _mm256_castps256_ps128(sum);
-        __m128 sum_final = _mm_add_ps(sum_low, sum_high);
-        sum_final = _mm_hadd_ps(sum_final, sum_final);
-        sum_final = _mm_hadd_ps(sum_final, sum_final);
+    // Horizontal addition
+    __m128 sum_high = _mm256_extractf128_ps(sum, 1);
+    __m128 sum_low = _mm256_castps256_ps128(sum);
+    __m128 sum_final = _mm_add_ps(sum_low, sum_high);
+    sum_final = _mm_hadd_ps(sum_final, sum_final);
+    sum_final = _mm_hadd_ps(sum_final, sum_final);
 
-        // Extract the result from the register
-        float result;
-        _mm_store_ss(&result, sum_final);
+    // Extract the result from the register
+    float result;
+    _mm_store_ss(&result, sum_final);
 
-        // Process the remaining elements
-        result += SSE::SQ8ComputeL2Sqr(query + i, codes + i, lowerBound + i, diff + i, dim - i);
-        return result;
+    // Process the remaining elements
+    result += SSE::SQ8ComputeL2Sqr(query + i, codes + i, lowerBound + i, diff + i, dim - i);
+    return result;
 #else
     return vsag::Generic::SQ8ComputeL2Sqr(query, codes, lowerBound, diff, dim);  // TODO
 #endif

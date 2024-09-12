@@ -13,8 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <x86intrin.h>
 #include <avx512fintrin.h>
+#include <x86intrin.h>
+
 #include "fp32_simd.h"
 #include "sq8_simd.h"
 namespace vsag {
@@ -174,7 +175,7 @@ SQ8ComputeL2Sqr(const float* query,
         // Load data into registers
         __m128i code_values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(codes + i));
         __m512i codes_512 = _mm512_cvtepu8_epi32(code_values);
-        __m512 code_floats = _mm512_div_ps(_mm512_cvtepi32_ps(codes_512),_mm512_set1_ps(255.0f));
+        __m512 code_floats = _mm512_div_ps(_mm512_cvtepi32_ps(codes_512), _mm512_set1_ps(255.0f));
         __m512 diff_values = _mm512_loadu_ps(diff + i);
         __m512 lowerBound_values = _mm512_loadu_ps(lowerBound + i);
         __m512 query_values = _mm512_loadu_ps(query + i);
