@@ -14,13 +14,13 @@
 // limitations under the License.
 
 #pragma once
-
 #include <cstdint>
 #include <cstring>
 
 #include "index/index_common_param.h"
 #include "nlohmann/json.hpp"
 #include "quantizer.h"
+#include "simd/fp32_simd.h"
 #include "simd/simd.h"
 
 namespace vsag {
@@ -53,10 +53,10 @@ public:
     ComputeImpl(const uint8_t* codes1, const uint8_t* codes2);
 
     void
-    SerializeImpl(StreamWriter& writer){};
+    SerializeImpl(StreamWriter& writer) {};
 
     void
-    DeserializeImpl(StreamReader& reader){};
+    DeserializeImpl(StreamReader& reader) {};
 
     inline void
     ProcessQueryImpl(const DataType* query, Computer<FP32Quantizer<metric>>& computer) const;
@@ -122,11 +122,17 @@ template <MetricType metric>
 float
 FP32Quantizer<metric>::ComputeImpl(const uint8_t* codes1, const uint8_t* codes2) {
     if (metric == MetricType::METRIC_TYPE_IP) {
-        return InnerProduct(codes1, codes2, &this->dim_);
+        return 1 - FP32ComputeIP(reinterpret_cast<const float*>(codes1),
+                                 reinterpret_cast<const float*>(codes2),
+                                 this->dim_);
     } else if (metric == MetricType::METRIC_TYPE_L2SQR) {
-        return L2Sqr(codes1, codes2, &this->dim_);
+        return FP32ComputeL2Sqr(reinterpret_cast<const float*>(codes1),
+                                reinterpret_cast<const float*>(codes2),
+                                this->dim_);
     } else if (metric == MetricType::METRIC_TYPE_COSINE) {
-        return InnerProduct(codes1, codes2, &this->dim_);  // TODO
+        return 1 - FP32ComputeIP(reinterpret_cast<const float*>(codes1),
+                                 reinterpret_cast<const float*>(codes2),
+                                 this->dim_);  // TODO
     } else {
         return 0.0f;
     }
@@ -146,11 +152,17 @@ FP32Quantizer<metric>::ComputeDistImpl(Computer<FP32Quantizer<metric>>& computer
                                        const uint8_t* codes,
                                        float* dists) const {
     if (metric == MetricType::METRIC_TYPE_IP) {
-        *dists = InnerProduct(codes, computer.buf_, &this->dim_);
+        *dists = 1 - FP32ComputeIP(reinterpret_cast<const float*>(codes),
+                                   reinterpret_cast<const float*>(computer.buf_),
+                                   this->dim_);
     } else if (metric == MetricType::METRIC_TYPE_L2SQR) {
-        *dists = L2Sqr(codes, computer.buf_, &this->dim_);
+        *dists = FP32ComputeL2Sqr(reinterpret_cast<const float*>(codes),
+                                  reinterpret_cast<const float*>(computer.buf_),
+                                  this->dim_);
     } else if (metric == MetricType::METRIC_TYPE_COSINE) {
-        *dists = InnerProduct(codes, computer.buf_, &this->dim_);  // TODO
+        *dists = 1 - FP32ComputeIP(reinterpret_cast<const float*>(codes),
+                                   reinterpret_cast<const float*>(computer.buf_),
+                                   this->dim_);  // TODO
     } else {
         *dists = 0.0f;
     }

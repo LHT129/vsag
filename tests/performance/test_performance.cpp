@@ -51,11 +51,62 @@ main(int argc, char* argv[]) {
         return -1;
     }
 
+//#pragma omp parallel for
+//    for (int i = 0; i < 10000000; ++ i) {
+//        auto sum = 0;
+//        for (int j = 0; j < 1000000; ++ j) {
+//            sum += j;
+//        }
+//        std::cout << i << "\n";
+//    }
+
     std::string dataset_filename = argv[1];
     std::string process = argv[2];
     std::string index_name = argv[3];
     std::string build_parameters = argv[4];
     std::string search_parameters = argv[5];
+
+    if (build_parameters == "hello hgraph") {
+        build_parameters = R"(
+{
+  "index_type": "HGraph",
+  "metric_type": "l2",
+  "dim": 128,
+  "data_type": "FP32",
+  "index_param": {
+    "use_reorder": false,
+    "graph": {
+      "io_type": "block_memory",
+      "io_params": {
+        "block_size": 134217728
+      },
+      "type": "NSW",
+      "graph_params": {
+        "max_degree": 64,
+        "init_capacity": 1000000
+      }
+    },
+    "base_codes": {
+      "io_type": "block_memory",
+      "io_params": {
+        "block_size": 134217728
+      },
+      "codes_type": "flatten_codes",
+      "codes_param": {
+      },
+      "quantization_type": "sq8",
+      "quantization_params": {
+        "subspace": 64,
+        "nbits": 8
+      }
+    }
+  }
+})";
+    }
+
+    if (search_parameters == "hello hgraph") {
+        search_parameters = R"({"hnsw":{"ef_search":100}})";
+    }
 
     struct stat st;
     if (stat(DIR_NAME.c_str(), &st) != 0) {
@@ -333,7 +384,9 @@ public:
         int64_t correct = 0;
         int64_t total = test_dataset->GetNumberOfQuery();
         spdlog::debug("total: " + std::to_string(total));
+
         std::vector<DatasetPtr> results;
+
         for (int64_t i = 0; i < total; ++i) {
             auto query = Dataset::Make();
             query->NumElements(1)

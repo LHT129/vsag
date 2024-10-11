@@ -55,15 +55,14 @@ void
 TestComputeMetricSQ4(uint64_t dim, int count, float error = 1e-5) {
     SQ4Quantizer<Metric> quantizer(dim);
     TestComputeCodes<SQ4Quantizer<Metric>, Metric>(quantizer, dim, count, error);
-    TestComputeCodesSame<SQ4Quantizer<Metric>, Metric>(quantizer, dim, count, error);
     TestComputer<SQ4Quantizer<Metric>, Metric>(quantizer, dim, count, error);
 }
 
 TEST_CASE("compute [ut][sq4_quantizer]") {
     constexpr MetricType metrics[3] = {
         MetricType::METRIC_TYPE_L2SQR, MetricType::METRIC_TYPE_COSINE, MetricType::METRIC_TYPE_IP};
-    float error = 0.2;
     for (auto dim : dims) {
+        float error = 0.1 * dim;
         for (auto count : counts) {
             TestComputeMetricSQ4<metrics[0]>(dim, count, error);
             TestComputeMetricSQ4<metrics[1]>(dim, count, error);

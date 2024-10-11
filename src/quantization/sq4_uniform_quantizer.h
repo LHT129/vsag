@@ -217,7 +217,7 @@ SQ4UniformQuantizer<metric>::DecodeBatchImpl(const uint8_t* codes, DataType* dat
 template <MetricType metric>
 inline float
 SQ4UniformQuantizer<metric>::ComputeImpl(const uint8_t* codes1, const uint8_t* codes2) const {
-    float result = 0;
+    float result = 0.0f;
     if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
         result = SQ4UniformComputeCodesIP(codes1, codes2, this->dim_);
 
@@ -234,6 +234,8 @@ SQ4UniformQuantizer<metric>::ComputeImpl(const uint8_t* codes1, const uint8_t* c
         result = lower_bound_ * (sum1 + sum2) + (diff_ / 15.0) * (diff_ / 15.0) * result -
                  lower_bound_ * lower_bound_;
 
+        result = 1 - result;
+
     } else if constexpr (metric == MetricType::METRIC_TYPE_COSINE) {
         result = SQ4UniformComputeCodesIP(codes1, codes2, this->dim_);
 
@@ -242,6 +244,8 @@ SQ4UniformQuantizer<metric>::ComputeImpl(const uint8_t* codes1, const uint8_t* c
 
         result = lower_bound_ * (sum1 + sum2) + (diff_ / 15.0) * (diff_ / 15.0) * result -
                  lower_bound_ * lower_bound_;
+
+        result = 1 - result;
     } else {
         logger::error("unsupported metric type");
         result = 0;

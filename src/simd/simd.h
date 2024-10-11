@@ -17,6 +17,10 @@
 
 #include <cstdlib>
 #include <string>
+#include "fp32_simd.h"
+#include "sq8_simd.h"
+#include "sq4_simd.h"
+#include "sq4_uniform_simd.h"
 
 namespace vsag {
 
