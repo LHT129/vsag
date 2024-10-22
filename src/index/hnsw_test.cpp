@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include "hnsw.h"
+#include "index_template_test.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
