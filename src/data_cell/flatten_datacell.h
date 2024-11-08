@@ -97,7 +97,7 @@ public:
     std::shared_ptr<Quantizer<QuantTmpl>> quantizer_{nullptr};
     std::shared_ptr<BasicIO<IOTmpl>> io_{nullptr};
 
-    Allocator* const allocator_{nullptr};
+    const std::shared_ptr<SafeAllocator> allocator_{nullptr};
 
 private:
     inline void

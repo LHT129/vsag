@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "fixtures.h"
+#include "safe_allocator.h"
 #include "vsag/errors.h"
 
 TEST_CASE("build with allocator", "[ut][hgraphindex]") {
@@ -64,10 +65,10 @@ TEST_CASE("build with allocator", "[ut][hgraphindex]") {
         })";
     auto json_param = nlohmann::json::parse(json_str);
     vsag::IndexCommonParam param;
-    auto allocator = std::make_shared<vsag::DefaultAllocator>();
+    auto allocator = std::make_shared<vsag::SafeAllocator>(vsag::DefaultAllocator::Instance());
     param.dim_ = 128;
     param.metric_ = vsag::MetricType::METRIC_TYPE_L2SQR;
-    param.allocator_ = allocator.get();
+    param.allocator_ = allocator;
 
     auto index = std::make_shared<vsag::HGraphIndex>(json_param["index_param"], param);
     index->Init();
