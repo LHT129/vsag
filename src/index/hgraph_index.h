@@ -89,7 +89,7 @@ public:
                 float radius,
                 const std::string& parameters,
                 int64_t limited_size = -1) const override {
-        return Dataset::Make();
+        SAFE_CALL(return this->range_search(query, radius, parameters, nullptr, limited_size););
     }
 
     // TODO(LHT): implement
@@ -99,7 +99,8 @@ public:
                 const std::string& parameters,
                 BitsetPtr invalid,
                 int64_t limited_size = -1) const override {
-        return Dataset::Make();
+        BitsetOrCallbackFilter filter(invalid);
+        SAFE_CALL(return this->range_search(query, radius, parameters, &filter, limited_size););
     }
 
     // TODO(LHT): implement
@@ -109,7 +110,8 @@ public:
                 const std::string& parameters,
                 const std::function<bool(int64_t)>& filter,
                 int64_t limited_size) const override {
-        return Dataset::Make();
+        BitsetOrCallbackFilter ft(filter);
+        SAFE_CALL(return this->range_search(query, radius, parameters, &ft, limited_size););
     }
 
     tl::expected<float, Error>
@@ -181,6 +183,17 @@ public:
     const IndexCommonParam common_param_{};
 
 private:
+    class InnerSearchParam {
+    public:
+        int topk_{0};
+        float radius_{0.0f};
+        InnerIdType ep_{0};
+        uint64_t ef_{10};
+        BaseFilterFunctor* is_id_allowed_{nullptr};
+    };
+
+    enum InnerSearchMode { KNN_SEARCH_MODE = 1, RANGE_SEARCH_MODE = 2 };
+
     tl::expected<std::vector<int64_t>, Error>
     build(const DatasetPtr& data);
 
@@ -192,6 +205,13 @@ private:
                int64_t k,
                const std::string& parameters,
                const std::function<bool(int64_t)>& filter) const;
+
+    tl::expected<DatasetPtr, Error>
+    range_search(const DatasetPtr& query,
+                 float radius,
+                 const std::string& parameters,
+                 BaseFilterFunctor* filter_ptr,
+                 int64_t limited_size) const;
 
     tl::expected<void, Error>
     serialize(std::ostream& out_stream) const;
@@ -224,13 +244,12 @@ private:
     GraphInterfacePtr
     generate_one_route_graph();
 
+    template <InnerSearchMode mode = InnerSearchMode::KNN_SEARCH_MODE>
     MaxHeap
     search_one_graph(const float* query,
                      const GraphInterfacePtr& graph,
                      const std::shared_ptr<FlattenInterface>& codes,
-                     InnerIdType ep,
-                     uint64_t ef,
-                     BaseFilterFunctor* is_id_allowed = nullptr) const;
+                     InnerSearchParam& inner_search_param) const;
 
     void
     select_edges_by_heuristic(MaxHeap& edges,
@@ -257,7 +276,7 @@ private:
     std::default_random_engine level_generator_{2021};
     double mult_{1.0};
 
-    Allocator* allocator_{nullptr};
+    std::shared_ptr<SafeAllocator> allocator_{nullptr};
 
     UnorderedMap<LabelType, InnerIdType> label_lookup_;
     mutable std::shared_mutex label_lookup_mutex_{};  // lock for label_lookup_

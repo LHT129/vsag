@@ -35,7 +35,8 @@ namespace vsag {
 
 class MemoryBlockIO : public BasicIO<MemoryBlockIO> {
 public:
-    explicit MemoryBlockIO(Allocator* allocator, uint64_t block_size = DEFAULT_BLOCK_SIZE)
+    explicit MemoryBlockIO(const std::shared_ptr<SafeAllocator>& allocator,
+                           uint64_t block_size = DEFAULT_BLOCK_SIZE)
         : block_size_(block_size), allocator_(allocator), blocks_(0, allocator) {
     }
 
@@ -106,7 +107,7 @@ private:
 
     Vector<uint8_t*> blocks_;
 
-    Allocator* const allocator_{nullptr};
+    const std::shared_ptr<SafeAllocator> allocator_{nullptr};
 
     static const uint64_t DEFAULT_BLOCK_SIZE = 128 * 1024 * 1024;  // 128MB
 };

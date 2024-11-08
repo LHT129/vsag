@@ -78,6 +78,8 @@ IndexCommonParam::CheckAndCreate(const std::string& json_string) {
                    fmt::format("parameters[{}] must be integer type", PARAMETER_DIM));
     int64_t dim = params[PARAMETER_DIM];
     CHECK_ARGUMENT(dim > 0, fmt::format("parameters[{}] must be greater than 0", PARAMETER_DIM));
+    CHECK_ARGUMENT(dim < 65536,
+                   fmt::format("parameters[{}] must be less than 65536", PARAMETER_DIM));
     result.dim_ = dim;
 
     return result;

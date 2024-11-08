@@ -87,10 +87,11 @@ Factory::CreateIndex(const std::string& origin_name,
         } else if (name == INDEX_HGRAPH) {
             auto param = nlohmann::json::parse(parameters);
             auto common_param = IndexCommonParam::CheckAndCreate(parameters);
-            if (allocator != nullptr) {
-                common_param.allocator_ = allocator;
+            if (not allocator) {
+                common_param.allocator_ =
+                    std::make_shared<SafeAllocator>(DefaultAllocator::Instance());
             } else {
-                common_param.allocator_ = DefaultAllocator::Instance().get();
+                common_param.allocator_ = std::make_shared<SafeAllocator>(allocator);
             }
             logger::debug("created a hgraph index");
             std::string hgraph_str = "{}";

@@ -30,7 +30,7 @@ namespace vsag {
 
 class MemoryIO : public BasicIO<MemoryIO> {
 public:
-    explicit MemoryIO(Allocator* allocator) : allocator_(allocator) {
+    explicit MemoryIO(const std::shared_ptr<SafeAllocator>& allocator) : allocator_(allocator) {
         start_ = reinterpret_cast<uint8_t*>(allocator_->Allocate(MIN_SIZE));
         current_size_ = MIN_SIZE;
     }
@@ -85,7 +85,7 @@ private:
     }
 
 private:
-    Allocator* const allocator_{nullptr};
+    const std::shared_ptr<SafeAllocator> allocator_{nullptr};
     uint8_t* start_{nullptr};
     uint64_t current_size_{0};
     static const uint64_t MIN_SIZE = 1024;

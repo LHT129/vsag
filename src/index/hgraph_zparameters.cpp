@@ -28,9 +28,17 @@ const std::unordered_map<std::string, std::vector<std::string>> HGraphParameters
 
 HGraphParameters::HGraphParameters(const IndexCommonParam& common_param, const std::string& str)
     : common_param_(common_param) {
+    this->check_common_param();
     this->refresh_json_by_string();
     this->ParseStringParam(str);
     this->refresh_string_by_json();
+}
+
+void
+HGraphParameters::check_common_param() const {
+    if (this->common_param_.data_type_ == DataTypes::DATA_TYPE_INT8) {
+        throw std::invalid_argument(fmt::format("HGraph not support {} datatype", DATATYPE_INT8));
+    }
 }
 
 void
@@ -48,6 +56,16 @@ HGraphParameters::ParseStringParam(const std::string& str) {
 void
 HGraphParameters::CheckAndSetKeyValue(const std::string& key, nlohmann::json& value) {
     const auto& iter = EXTERNAL_MAPPING.find(key);
+
+    if (key == HGRAPH_BASE_QUANTIZATION_TYPE) {
+        std::string value_str = value;
+        if (value_str != "sq8" && value_str != "fp32") {
+            throw std::invalid_argument(fmt::format("parameters[{}] must be sq8 or fp32, now is {}",
+                                                    HGRAPH_BASE_QUANTIZATION_TYPE,
+                                                    value_str));
+        }
+    }
+
     if (iter != EXTERNAL_MAPPING.end()) {
         const auto& vec = iter->second;
         auto* json = &json_;
@@ -56,7 +74,7 @@ HGraphParameters::CheckAndSetKeyValue(const std::string& key, nlohmann::json& va
         }
         *json = value;
     } else {
-        // TODO(LHT): Error logger
+        throw std::invalid_argument(fmt::format("HGraph have no config param: {}", key));
     }
 }
 

@@ -54,6 +54,9 @@ private:
         this->str_ = this->json_.dump();
     }
 
+    void
+    check_common_param() const;
+
 private:
     nlohmann::json json_;
 
