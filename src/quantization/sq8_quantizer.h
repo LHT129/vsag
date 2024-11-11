@@ -31,7 +31,7 @@ namespace vsag {
 template <MetricType metric = MetricType::METRIC_TYPE_L2SQR>
 class SQ8Quantizer : public Quantizer<SQ8Quantizer<metric>> {
 public:
-    explicit SQ8Quantizer(int dim, const std::shared_ptr<SafeAllocator>& allocator);
+    explicit SQ8Quantizer(int dim, const SafeAllocatorPtr& allocator);
 
     SQ8Quantizer(const JsonType& quantization_param, const IndexCommonParam& common_param);
 
@@ -76,7 +76,7 @@ public:
 };
 
 template <MetricType Metric>
-SQ8Quantizer<Metric>::SQ8Quantizer(int dim, const std::shared_ptr<SafeAllocator>& allocator)
+SQ8Quantizer<Metric>::SQ8Quantizer(int dim, const SafeAllocatorPtr& allocator)
     : Quantizer<SQ8Quantizer<Metric>>(dim, allocator), diff_(allocator), lower_bound_(allocator) {
     // align 64 bytes (512 bits) to avoid illegal memory access in SIMD
     this->code_size_ = this->dim_;

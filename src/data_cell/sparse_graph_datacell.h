@@ -29,7 +29,7 @@ public:
 
     SparseGraphDataCell(const JsonType& graph_param, const IndexCommonParam& common_param);
 
-    explicit SparseGraphDataCell(const std::shared_ptr<SafeAllocator>& allocator = nullptr,
+    explicit SparseGraphDataCell(const SafeAllocatorPtr& allocator = nullptr,
                                  uint32_t max_degree = 32);
 
     void
@@ -59,7 +59,7 @@ public:
 
 private:
     uint32_t code_line_size_{0};
-    const std::shared_ptr<SafeAllocator> allocator_{nullptr};
+    const SafeAllocatorPtr allocator_{nullptr};
     UnorderedMap<InnerIdType, std::unique_ptr<Vector<InnerIdType>>> neighbors_;
     mutable std::shared_mutex neighbors_map_mutex_{};
 };

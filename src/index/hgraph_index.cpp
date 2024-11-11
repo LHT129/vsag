@@ -387,7 +387,7 @@ template <HGraphIndex::InnerSearchMode mode>
 HGraphIndex::MaxHeap
 HGraphIndex::search_one_graph(const float* query,
                               const GraphInterfacePtr& graph,
-                              const std::shared_ptr<FlattenInterface>& flatten,
+                              const FlattenInterfacePtr& flatten,
                               InnerSearchParam& inner_search_param) const {
     auto visited_list = this->pool_->getFreeVisitedList();
 
@@ -493,7 +493,7 @@ HGraphIndex::search_one_graph(const float* query,
 void
 HGraphIndex::select_edges_by_heuristic(HGraphIndex::MaxHeap& edges,
                                        uint64_t max_size,
-                                       const std::shared_ptr<FlattenInterface>& flatten) {
+                                       const FlattenInterfacePtr& flatten) {
     if (edges.size() < max_size) {
         return;
     }
@@ -534,7 +534,7 @@ InnerIdType
 HGraphIndex::mutually_connect_new_element(InnerIdType cur_c,
                                           MaxHeap& top_candidates,
                                           GraphInterfacePtr graph,
-                                          std::shared_ptr<FlattenInterface> flatten,
+                                          FlattenInterfacePtr flatten,
                                           bool is_update) {
     const size_t max_size = graph->MaximumDegree();
     this->select_edges_by_heuristic(top_candidates, max_size, flatten);

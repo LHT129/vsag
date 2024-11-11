@@ -85,7 +85,7 @@ public:
         this->allocator_ = std::make_shared<SafeAllocator>(allocator);
     }
 
-    AllocatorWrapper(const std::shared_ptr<SafeAllocator>& allocator) : allocator_(allocator){};
+    AllocatorWrapper(const SafeAllocatorPtr& allocator) : allocator_(allocator){};
 
     template <class U>
     AllocatorWrapper(const AllocatorWrapper<U>& other) : allocator_(other.allocator_) {
@@ -123,7 +123,7 @@ public:
         using other = AllocatorWrapper<U>;
     };
 
-    std::shared_ptr<SafeAllocator> allocator_{nullptr};
+    SafeAllocatorPtr allocator_{nullptr};
 };
 
 }  // namespace vsag

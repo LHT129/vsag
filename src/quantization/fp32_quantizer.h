@@ -29,7 +29,7 @@ namespace vsag {
 template <MetricType metric = MetricType::METRIC_TYPE_L2SQR>
 class FP32Quantizer : public Quantizer<FP32Quantizer<metric>> {
 public:
-    explicit FP32Quantizer(int dim, const std::shared_ptr<SafeAllocator>& allocator);
+    explicit FP32Quantizer(int dim, const SafeAllocatorPtr& allocator);
 
     FP32Quantizer(const JsonType& quantization_param, const IndexCommonParam& common_param);
 
@@ -79,7 +79,7 @@ FP32Quantizer<metric>::FP32Quantizer(const JsonType& quantization_param,
 }
 
 template <MetricType metric>
-FP32Quantizer<metric>::FP32Quantizer(int dim, const std::shared_ptr<SafeAllocator>& allocator)
+FP32Quantizer<metric>::FP32Quantizer(int dim, const SafeAllocatorPtr& allocator)
     : Quantizer<FP32Quantizer<metric>>(dim, allocator) {
     this->code_size_ = dim * sizeof(float);
 }

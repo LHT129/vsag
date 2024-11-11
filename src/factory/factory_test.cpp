@@ -18,9 +18,9 @@
 #include <spdlog/spdlog-inl.h>
 
 #include <catch2/catch_test_macros.hpp>
-#include "typing.h"
 
 #include "../logger.h"
+#include "typing.h"
 #include "vsag/errors.h"
 
 TEST_CASE("create index with full parameters", "[factory][ut]") {

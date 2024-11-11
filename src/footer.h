@@ -17,8 +17,8 @@
 
 #include "fmt/format.h"
 #include "nlohmann/json.hpp"
-#include "vsag/constants.h"
 #include "typing.h"
+#include "vsag/constants.h"
 
 namespace vsag {
 

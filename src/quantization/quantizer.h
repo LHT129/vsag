@@ -34,7 +34,7 @@ using DataType = float;
 template <typename T>
 class Quantizer {
 public:
-    explicit Quantizer<T>(int dim, const std::shared_ptr<SafeAllocator>& allocator)
+    explicit Quantizer<T>(int dim, const SafeAllocatorPtr& allocator)
         : dim_(dim), code_size_(dim * sizeof(DataType)), allocator_(allocator){};
 
     ~Quantizer() = default;
@@ -210,7 +210,7 @@ private:
     uint64_t code_size_{0};
     bool is_trained_{false};
     MetricType metric_{MetricType::METRIC_TYPE_L2SQR};
-    const std::shared_ptr<SafeAllocator> allocator_{nullptr};
+    const SafeAllocatorPtr allocator_{nullptr};
 };
 
 }  // namespace vsag

@@ -169,8 +169,8 @@ public:
     deserialize(StreamReader& reader);
 
 public:
-    std::shared_ptr<FlattenInterface> basic_flatten_codes_{nullptr};
-    std::shared_ptr<FlattenInterface> high_precise_codes_{nullptr};
+    FlattenInterfacePtr basic_flatten_codes_{nullptr};
+    FlattenInterfacePtr high_precise_codes_{nullptr};
     Vector<GraphInterfacePtr> route_graphs_;
     GraphInterfacePtr bottom_graph_{nullptr};
 
@@ -248,19 +248,19 @@ private:
     MaxHeap
     search_one_graph(const float* query,
                      const GraphInterfacePtr& graph,
-                     const std::shared_ptr<FlattenInterface>& codes,
+                     const FlattenInterfacePtr& codes,
                      InnerSearchParam& inner_search_param) const;
 
     void
     select_edges_by_heuristic(MaxHeap& edges,
                               uint64_t max_size,
-                              const std::shared_ptr<FlattenInterface>& flatten);
+                              const FlattenInterfacePtr& flatten);
 
     InnerIdType
     mutually_connect_new_element(InnerIdType cur_c,
                                  MaxHeap& top_candidates,
                                  GraphInterfacePtr graph,
-                                 std::shared_ptr<FlattenInterface> flatten,
+                                 FlattenInterfacePtr flatten,
                                  bool is_update);
 
     void
@@ -276,7 +276,7 @@ private:
     std::default_random_engine level_generator_{2021};
     double mult_{1.0};
 
-    std::shared_ptr<SafeAllocator> allocator_{nullptr};
+    SafeAllocatorPtr allocator_{nullptr};
 
     UnorderedMap<LabelType, InnerIdType> label_lookup_;
     mutable std::shared_mutex label_lookup_mutex_{};  // lock for label_lookup_
