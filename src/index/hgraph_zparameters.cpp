@@ -46,7 +46,7 @@ HGraphParameters::ParseStringParam(const std::string& str) {
     if (str == "") {
         return;
     }
-    auto json_obj = nlohmann::json::parse(str);
+    auto json_obj = JsonType::parse(str);
     for (const auto& [key, value] : json_obj.items()) {
         this->CheckAndSetKeyValue(key, value);
     }
@@ -54,7 +54,7 @@ HGraphParameters::ParseStringParam(const std::string& str) {
 }
 
 void
-HGraphParameters::CheckAndSetKeyValue(const std::string& key, nlohmann::json& value) {
+HGraphParameters::CheckAndSetKeyValue(const std::string& key, JsonType& value) {
     const auto& iter = EXTERNAL_MAPPING.find(key);
 
     if (key == HGRAPH_BASE_QUANTIZATION_TYPE) {

@@ -22,6 +22,7 @@
 #include "metric_type.h"
 #include "safe_allocator.h"
 #include "vsag/allocator.h"
+#include "typing.h"
 
 namespace vsag {
 class IndexCommonParam {

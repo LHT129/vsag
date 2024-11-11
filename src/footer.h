@@ -14,9 +14,11 @@
 // limitations under the License.
 
 #pragma once
+
 #include "fmt/format.h"
 #include "nlohmann/json.hpp"
 #include "vsag/constants.h"
+#include "typing.h"
 
 namespace vsag {
 
@@ -44,7 +46,7 @@ public:
     Deserialize(std::istream& in_stream);
 
 private:
-    nlohmann::json json_;
+    JsonType json_;
 };
 
 }  // namespace vsag

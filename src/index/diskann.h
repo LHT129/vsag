@@ -34,6 +34,7 @@
 #include "../utils.h"
 #include "vsag/index.h"
 #include "vsag/options.h"
+#include "typing.h"
 
 using ThreadPool = progschj::ThreadPool;
 
