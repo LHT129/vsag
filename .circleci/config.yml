@@ -1,13 +1,34 @@
 version: 2.1
 
+executors:
+  vsag_compile_executor:
+    docker:
+      - image: vsaglib/vsag:ubuntu
+    working_directory: /root/project/
+
 workflows:
   pull-request-workflow:
     jobs:
-      - pull-request-check:
+      - pull-request-build:
           filters:
             branches:
               ignore:
                 - main
+      - pull-request-unittest:
+          filters:
+            branches:
+              ignore:
+                - main
+          requires:
+            - pull-request-build
+      - pull-request-functest:
+          filters:
+            branches:
+              ignore:
+                - main
+          requires:
+            - pull-request-build
+
   main-branch-workflow:
     jobs:
       - main-branch-check:
@@ -17,12 +38,12 @@ workflows:
                 - main
 
 jobs:
-  pull-request-check:
-    docker:
-      - image: vsaglib/vsag:ubuntu
+  pull-request-build:
+    executor: vsag_compile_executor
     resource_class: medium+
     steps:
       - checkout
+      - run: git fetch
       - run: ./scripts/check_format.sh
       - restore_cache:
           keys:
@@ -32,7 +53,31 @@ jobs:
           key: fork-cache-{{ checksum "CMakeLists.txt" }}-{{ checksum ".circleci/fresh_ci_cache.commit" }}
           paths:
             - ./build
-      - run: make test_asan_parallel
+      - persist_to_workspace:
+          root: /root/project/
+          paths:
+            - build
+
+  pull-request-unittest:
+    executor: vsag_compile_executor
+    resource_class: medium
+    steps:
+      - attach_workspace:
+          at: /root/project/
+      - run: /root/project/build/tests/unittests -d yes --allow-running-no-tests [hnsw]
+      - run: /root/project/build/tests/unittests -d yes --allow-running-no-tests [diskann]
+      - run: /root/project/build/tests/unittests -d yes --allow-running-no-tests ~[diskann]~[hnsw]
+      - run: /root/project/build/mockimpl/tests_mockimpl -d yes --allow-running-no-tests
+
+  pull-request-functest:
+    executor: vsag_compile_executor
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /root/project/
+      - run: /root/project/build/tests/functests -d yes --allow-running-no-tests [hnsw]
+      - run: /root/project/build/tests/functests -d yes --allow-running-no-tests [diskann]
+      - run: /root/project/build/tests/functests -d yes --allow-running-no-tests ~[diskann]~[hnsw]
 
   main-branch-check:
     docker:
