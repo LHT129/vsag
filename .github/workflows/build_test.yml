@@ -1,0 +1,19 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: vsaglib/vsag:ubuntu
+    steps:
+      - uses: actions/checkout@v4
+      - name: make asan
+        run: make asan
+      - name: make test
+        run: make test_asan
