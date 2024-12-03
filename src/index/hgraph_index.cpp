@@ -17,6 +17,8 @@
 
 #include <fmt/format-inl.h>
 
+#include <memory>
+
 #include "common.h"
 #include "data_cell/sparse_graph_datacell.h"
 #include "hgraph_zparameters.h"
@@ -79,6 +81,16 @@ HGraphIndex::Init() {
 
     this->pool_ =
         std::make_shared<hnswlib::VisitedListPool>(this->bottom_graph_->MaxCapacity(), allocator_);
+
+    if (this->index_param_.contains(BUILD_PARAMS_KEY)) {
+        auto& build_params = this->index_param_[BUILD_PARAMS_KEY];
+        if (build_params.contains(BUILD_EF_CONSTRUCTION)) {
+            this->ef_construct_ = build_params[BUILD_EF_CONSTRUCTION];
+        }
+        if (build_params.contains(BUILD_THREAD_COUNT)) {
+            this->build_thread_count_ = build_params[BUILD_THREAD_COUNT];
+        }
+    }
 
     if (this->build_thread_count_ > 1) {
         this->build_pool_ = std::make_unique<progschj::ThreadPool>(this->build_thread_count_);
@@ -233,7 +245,7 @@ HGraphIndex::hnsw_add(const DatasetPtr& data) {
     auto* ids = data->GetIds();
     auto* datas = data->GetFloat32Vectors();
     auto cur_count = this->bottom_graph_->TotalCount();
-    vsag::Vector<std::shared_mutex>(total + cur_count, allocator_).swap(this->neighbors_mutex_);
+    this->resize(total + cur_count);
 
     std::mutex add_mutex;
 
@@ -688,6 +700,16 @@ HGraphIndex::add_one_point(const float* data, int level, InnerIdType inner_id) {
         bottom_graph_->InsertNeighborsById(inner_id, Vector<InnerIdType>(allocator_));
     }
     bottom_graph_->IncreaseTotalCount(1);
+}
+
+void
+HGraphIndex::resize(uint64_t new_size) {
+    auto cur_size = this->bottom_graph_->MaxCapacity();
+    if (new_size > cur_size) {
+        vsag::Vector<std::shared_mutex>(new_size, allocator_).swap(this->neighbors_mutex_);
+        pool_ = std::make_shared<hnswlib::VisitedListPool>(new_size, allocator_);
+        this->bottom_graph_->SetMaxCapacity(new_size);
+    }
 }
 
 }  // namespace vsag
