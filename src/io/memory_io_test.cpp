@@ -22,13 +22,13 @@
 #include "default_allocator.h"
 using namespace vsag;
 
-TEST_CASE("read&write [ut][memory_io]") {
+TEST_CASE("read&write", "[ut][memory_io][io]") {
     auto allocator = std::make_unique<DefaultAllocator>();
     auto io = std::make_unique<MemoryIO>(allocator.get());
     TestBasicReadWrite(*io);
 }
 
-TEST_CASE("serialize&deserialize [ut][memory_io]") {
+TEST_CASE("serialize&deserialize", "[ut][memory_io][io]") {
     auto allocator = std::make_unique<DefaultAllocator>();
     auto wio = std::make_unique<MemoryIO>(allocator.get());
     auto rio = std::make_unique<MemoryIO>(allocator.get());

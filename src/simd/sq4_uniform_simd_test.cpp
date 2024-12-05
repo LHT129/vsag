@@ -56,7 +56,7 @@ namespace avx512 = avx2;
         }                                                                                        \
     }
 
-TEST_CASE("SQ4 Uniform SIMD Compute Codes", "[SQ4 Uniform SIMD]") {
+TEST_CASE("SQ4 Uniform SIMD Compute Codes", "[SQ4 Uniform] [SIMD] [ut]") {
     auto dims = fixtures::get_common_used_dims();
     int64_t count = 100;
     for (const auto& dim : dims) {

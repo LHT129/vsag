@@ -33,8 +33,8 @@ GetL2DistanceFunc(size_t dim);
 
 float
 L2Sqr(const void* pVect1v, const void* pVect2v, const void* qty_ptr) {
-    float* pVect1 = (float*)pVect1v;
-    float* pVect2 = (float*)pVect2v;
+    auto* pVect1 = (float*)pVect1v;
+    auto* pVect2 = (float*)pVect2v;
     size_t qty = *((size_t*)qty_ptr);
 
     float res = 0;
@@ -61,7 +61,7 @@ TEST_CASE("test ip instructions", "[ut][simd]") {
     std::random_device rd;
     std::mt19937 rng(rd());
     for (size_t dim = 1; dim < 1026; dim++) {
-        std::uniform_real_distribution<> distrib_real;
+        std::uniform_real_distribution<float> distrib_real;
         float vector1[dim];
         float vector2[dim];
         for (int j = 0; j < dim; j++) {
@@ -79,7 +79,7 @@ TEST_CASE("test l2 instructions", "[ut][simd]") {
     std::random_device rd;
     std::mt19937 rng(rd());
     for (size_t dim = 1; dim < 1026; dim++) {
-        std::uniform_real_distribution<> distrib_real;
+        std::uniform_real_distribution<float> distrib_real;
         float vector1[dim];
         float vector2[dim];
         for (int j = 0; j < dim; j++) {

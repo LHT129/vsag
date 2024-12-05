@@ -23,7 +23,7 @@
 
 namespace vsag {
 
-struct DiskannParameters {
+class DiskannParameters {
 public:
     static DiskannParameters
     FromJson(JsonType& diskann_param_obj, IndexCommonParam index_common_param);
@@ -48,7 +48,7 @@ private:
     DiskannParameters() = default;
 };
 
-struct DiskannSearchParameters {
+class DiskannSearchParameters {
 public:
     static DiskannSearchParameters
     FromJson(const std::string& json_string);

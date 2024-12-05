@@ -173,13 +173,13 @@ public:
     const IndexCommonParam common_param_{};
 
 private:
-    class InnerSearchParam {
+    struct InnerSearchParam {
     public:
         int topk_{0};
-        float radius_{0.0f};
-        InnerIdType ep_{0};
-        uint64_t ef_{10};
-        BaseFilterFunctor* is_id_allowed_{nullptr};
+        float radius{0.0f};
+        InnerIdType ep{0};
+        uint64_t ef{10};
+        BaseFilterFunctor* is_id_allowed{nullptr};
     };
 
     enum InnerSearchMode { KNN_SEARCH_MODE = 1, RANGE_SEARCH_MODE = 2 };
@@ -258,8 +258,8 @@ private:
     InnerIdType
     mutually_connect_new_element(InnerIdType cur_c,
                                  MaxHeap& top_candidates,
-                                 GraphInterfacePtr graph,
-                                 FlattenInterfacePtr flatten,
+                                 const GraphInterfacePtr& graph,
+                                 const FlattenInterfacePtr& flatten,
                                  bool is_update);
 
     void

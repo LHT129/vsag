@@ -52,7 +52,7 @@ namespace avx512 = avx2;
         }                                                                             \
     };
 
-TEST_CASE("FP32 SIMD Compute", "[FP32SIMD]") {
+TEST_CASE("FP32 SIMD Compute", "[ut][FP32SIMD]") {
     const std::vector<int64_t> dims = {1, 8, 16, 32, 256};
     int64_t count = 100;
     for (const auto& dim : dims) {

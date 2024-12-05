@@ -146,21 +146,21 @@ HGraphIndex::knn_search(const DatasetPtr& query,
         CHECK_ARGUMENT(query->GetNumElements() == 1, "query dataset should contain 1 vector only");
 
         InnerSearchParam search_param;
-        search_param.ep_ = this->entry_point_id_;
-        search_param.ef_ = 1;
-        search_param.is_id_allowed_ = nullptr;
+        search_param.ep = this->entry_point_id_;
+        search_param.ef = 1;
+        search_param.is_id_allowed = nullptr;
         for (int64_t i = this->route_graphs_.size() - 1; i >= 0; --i) {
             auto result = this->search_one_graph(query->GetFloat32Vectors(),
                                                  this->route_graphs_[i],
                                                  this->basic_flatten_codes_,
                                                  search_param);
-            search_param.ep_ = result.top().second;
+            search_param.ep = result.top().second;
         }
 
         auto params = HGraphSearchParameters::FromJson(parameters);
 
-        search_param.ef_ = params.ef_search;
-        search_param.is_id_allowed_ = &ft;
+        search_param.ef = params.ef_search;
+        search_param.is_id_allowed = &ft;
         auto search_result = this->search_one_graph(query->GetFloat32Vectors(),
                                                     this->bottom_graph_,
                                                     this->basic_flatten_codes_,
@@ -309,9 +309,9 @@ HGraphIndex::search_one_graph(const float* query,
     auto computer = flatten->FactoryComputer(query);
     auto prefetch_neighbor_visit_num = 1;  // TODO(LHT) Optimize the param;
 
-    auto* is_id_allowed = inner_search_param.is_id_allowed_;
-    auto ep = inner_search_param.ep_;
-    auto ef = inner_search_param.ef_;
+    auto* is_id_allowed = inner_search_param.is_id_allowed;
+    auto ep = inner_search_param.ep;
+    auto ef = inner_search_param.ef;
 
     MaxHeap candidate_set(allocator_);
     MaxHeap cur_result(allocator_);
@@ -323,7 +323,7 @@ HGraphIndex::search_one_graph(const float* query,
         lower_bound = cur_result.top().first;
     }
     if constexpr (mode == RANGE_SEARCH_MODE) {
-        if (dist > inner_search_param.radius_) {
+        if (dist > inner_search_param.radius) {
             cur_result.pop();
         }
     }
@@ -359,8 +359,7 @@ HGraphIndex::search_one_graph(const float* query,
 #endif
         }
         auto count_no_visited = 0;
-        for (uint64_t i = 0; i < neighbors.size(); ++i) {
-            const auto& neighbor = neighbors[i];
+        for (unsigned int neighbor : neighbors) {
 #if defined(USE_SSE)
             if (i + prefetch_neighbor_visit_num < neighbors.size()) {
                 _mm_prefetch(visited_array + neighbors[i + prefetch_neighbor_visit_num],
@@ -379,7 +378,7 @@ HGraphIndex::search_one_graph(const float* query,
         for (auto i = 0; i < count_no_visited; ++i) {
             dist = tmp_result[i];
             if (cur_result.size() < ef || lower_bound > dist ||
-                (mode == RANGE_SEARCH_MODE && dist <= inner_search_param.radius_)) {
+                (mode == RANGE_SEARCH_MODE && dist <= inner_search_param.radius)) {
                 candidate_set.emplace(-dist, to_be_visited[i]);
                 flatten->Prefetch(candidate_set.top().second);
 
@@ -425,21 +424,21 @@ HGraphIndex::range_search(const DatasetPtr& query,
                        fmt::format("limited_size({}) must not be equal to 0", limited_size));
 
         InnerSearchParam search_param;
-        search_param.ep_ = this->entry_point_id_;
-        search_param.ef_ = 1;
-        for (int64_t i = this->route_graphs_.size() - 1; i >= 0; --i) {
+        search_param.ep = this->entry_point_id_;
+        search_param.ef = 1;
+        for (int64_t i = static_cast<int64_t>(this->route_graphs_.size() - 1); i >= 0; --i) {
             auto result = this->search_one_graph(query->GetFloat32Vectors(),
                                                  this->route_graphs_[i],
                                                  this->basic_flatten_codes_,
                                                  search_param);
-            search_param.ep_ = result.top().second;
+            search_param.ep = result.top().second;
         }
 
         auto params = HGraphSearchParameters::FromJson(parameters);
 
-        search_param.ef_ = std::max(params.ef_search, limited_size);
-        search_param.is_id_allowed_ = filter_ptr;
-        search_param.radius_ = radius;
+        search_param.ef = std::max(params.ef_search, limited_size);
+        search_param.is_id_allowed = filter_ptr;
+        search_param.radius = radius;
         auto search_result = this->search_one_graph(query->GetFloat32Vectors(),
                                                     this->bottom_graph_,
                                                     this->basic_flatten_codes_,
@@ -488,20 +487,20 @@ HGraphIndex::select_edges_by_heuristic(HGraphIndex::MaxHeap& edges,
     while (not queue_closest.empty()) {
         if (return_list.size() >= max_size)
             break;
-        std::pair<float, InnerIdType> curent_pair = queue_closest.top();
-        float float_query = -curent_pair.first;
+        std::pair<float, InnerIdType> current_pair = queue_closest.top();
+        float float_query = -current_pair.first;
         queue_closest.pop();
         bool good = true;
 
         for (const auto& second_pair : return_list) {
-            float curdist = flatten->ComputePairVectors(second_pair.second, curent_pair.second);
+            float curdist = flatten->ComputePairVectors(second_pair.second, current_pair.second);
             if (curdist < float_query) {
                 good = false;
                 break;
             }
         }
         if (good) {
-            return_list.emplace_back(curent_pair);
+            return_list.emplace_back(current_pair);
         }
     }
 
@@ -513,8 +512,8 @@ HGraphIndex::select_edges_by_heuristic(HGraphIndex::MaxHeap& edges,
 InnerIdType
 HGraphIndex::mutually_connect_new_element(InnerIdType cur_c,
                                           MaxHeap& top_candidates,
-                                          GraphInterfacePtr graph,
-                                          FlattenInterfacePtr flatten,
+                                          const GraphInterfacePtr& graph,
+                                          const FlattenInterfacePtr& flatten,
                                           bool is_update) {
     const size_t max_size = graph->MaximumDegree();
     this->select_edges_by_heuristic(top_candidates, max_size, flatten);
@@ -763,21 +762,21 @@ HGraphIndex::add_one_point(const float* data, int level, InnerIdType inner_id) {
     MaxHeap result(allocator_);
 
     InnerSearchParam param{
-        .ep_ = this->entry_point_id_,
-        .ef_ = 1,
-        .is_id_allowed_ = nullptr,
+        .ep = this->entry_point_id_,
+        .ef = 1,
+        .is_id_allowed = nullptr,
     };
 
     for (auto j = max_level_ - 1; j > level; --j) {
         result = search_one_graph(data, route_graphs_[j], basic_flatten_codes_, param);
-        param.ep_ = result.top().second;
+        param.ep = result.top().second;
     }
 
-    param.ef_ = this->ef_construct_;
+    param.ef = this->ef_construct_;
     for (auto j = level; j >= 0; --j) {
         if (route_graphs_[j]->TotalCount() != 0) {
             result = search_one_graph(data, route_graphs_[j], basic_flatten_codes_, param);
-            param.ep_ = this->mutually_connect_new_element(
+            param.ep = this->mutually_connect_new_element(
                 inner_id, result, route_graphs_[j], basic_flatten_codes_, false);
         } else {
             route_graphs_[j]->InsertNeighborsById(inner_id, Vector<InnerIdType>(allocator_));

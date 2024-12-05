@@ -169,8 +169,8 @@ TEST_CASE("knn_search", "[diskann][ut]") {
         ->Ids(ids.data())
         ->Float32Vectors(vectors.data())
         ->Owner(false);
-    auto result = index->Build(dataset);
-    REQUIRE(result.has_value());
+    auto build_result = index->Build(dataset);
+    REQUIRE(build_result.has_value());
 
     auto query = vsag::Dataset::Make();
     query->Dim(commom_param.dim_)
@@ -201,7 +201,7 @@ TEST_CASE("knn_search", "[diskann][ut]") {
     }
 
     SECTION("dimension not equal") {
-        auto query = vsag::Dataset::Make();
+        query = vsag::Dataset::Make();
         query->NumElements(1)
             ->Dim(commom_param.dim_ - 1)
             ->Float32Vectors(vectors.data())
@@ -270,8 +270,8 @@ TEST_CASE("range_search", "[diskann][ut]") {
         ->Ids(ids.data())
         ->Float32Vectors(vectors.data())
         ->Owner(false);
-    auto result = index->Build(dataset);
-    REQUIRE(result.has_value());
+    auto build_result = index->Build(dataset);
+    REQUIRE(build_result.has_value());
 
     auto query = vsag::Dataset::Make();
     query->Dim(commom_param.dim_)
@@ -318,14 +318,14 @@ TEST_CASE("range_search", "[diskann][ut]") {
     }
 
     SECTION("invalid parameter radius equals to 0") {
-        auto query = vsag::Dataset::Make();
+        query = vsag::Dataset::Make();
         query->NumElements(1)->Dim(commom_param.dim_)->Float32Vectors(vectors.data())->Owner(false);
         auto result = index->RangeSearch(query, 0, params.dump());
         REQUIRE(result.has_value());
     }
 
     SECTION("invalid parameter radius less than 0") {
-        auto query = vsag::Dataset::Make();
+        query = vsag::Dataset::Make();
         query->NumElements(1)->Dim(commom_param.dim_)->Float32Vectors(vectors.data())->Owner(false);
         auto result = index->RangeSearch(query, -1, params.dump());
         REQUIRE_FALSE(result.has_value());
@@ -333,7 +333,7 @@ TEST_CASE("range_search", "[diskann][ut]") {
     }
 
     SECTION("dimension not equal") {
-        auto query = vsag::Dataset::Make();
+        query = vsag::Dataset::Make();
         query->NumElements(1)
             ->Dim(commom_param.dim_ - 1)
             ->Float32Vectors(vectors.data())
@@ -344,7 +344,7 @@ TEST_CASE("range_search", "[diskann][ut]") {
     }
 
     SECTION("query length is not 1") {
-        auto query = vsag::Dataset::Make();
+        query = vsag::Dataset::Make();
         query->NumElements(2)->Dim(commom_param.dim_)->Float32Vectors(vectors.data())->Owner(false);
         auto result = index->RangeSearch(query, radius, params.dump());
         REQUIRE_FALSE(result.has_value());

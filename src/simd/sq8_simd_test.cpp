@@ -55,7 +55,7 @@ namespace avx512 = avx2;
         }                                                                                   \
     }
 
-TEST_CASE("SQ8 SIMD Compute Codes", "[SQ8 SIMD]") {
+TEST_CASE("SQ8 SIMD Compute Codes", "[SQ8] [SIMD] [ut]") {
     auto dims = fixtures::get_common_used_dims();
     int64_t count = 100;
     std::vector<uint8_t> vec1, vec2;
@@ -78,7 +78,7 @@ TEST_CASE("SQ8 SIMD Compute Codes", "[SQ8 SIMD]") {
     }
 }
 
-TEST_CASE("SQ8 SIMD Compute", "[SQ8 SIMD]") {
+TEST_CASE("SQ8 SIMD Compute", "[SQ8] [SIMD] [ut]") {
     auto dims = fixtures::get_common_used_dims();
     int64_t count = 100;
     for (const auto& dim : dims) {

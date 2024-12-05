@@ -66,9 +66,8 @@ main() {
     auto ids = (int64_t*)allocator.Allocate(sizeof(int64_t) * num_vectors);
     auto vectors = (float*)allocator.Allocate(sizeof(float) * dim * num_vectors);
 
-    std::mt19937 rng;
-    rng.seed(47);
-    std::uniform_real_distribution<> distrib_real;
+    std::mt19937 rng(49);
+    std::uniform_real_distribution<float> distrib_real;
     for (int64_t i = 0; i < num_vectors; ++i) {
         ids[i] = i;
     }
@@ -107,7 +106,6 @@ main() {
     }
 
     std::cout << "delete index" << std::endl;
-    index = nullptr;
-
+    index.reset();
     return 0;
 }

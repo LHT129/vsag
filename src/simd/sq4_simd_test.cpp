@@ -17,7 +17,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "../logger.h"
 #include "catch2/benchmark/catch_benchmark.hpp"
 #include "fixtures.h"
 
@@ -62,7 +61,7 @@ namespace avx512 = avx2;
         REQUIRE(fixtures::dist_t(gt) == fixtures::dist_t(avx512)); \
     }
 
-TEST_CASE("SQ4 SIMD Compute Codes", "[SQ4 SIMD]") {
+TEST_CASE("SQ4 SIMD Compute Codes", "[SQ4] [SIMD] [ut]") {
     const std::vector<uint32_t> dims = {1, 8, 16, 32, 97, 129, 256};
     int64_t count = 100;
     for (const auto& dim : dims) {
@@ -78,7 +77,7 @@ TEST_CASE("SQ4 SIMD Compute Codes", "[SQ4 SIMD]") {
     }
 }
 
-TEST_CASE("SQ4 SIMD Compute", "[SQ4 SIMD]") {
+TEST_CASE("SQ4 SIMD Compute", "[ut] [SQ4] [SIMD]") {
     const std::vector<int64_t> dims = {1, 8, 16, 32, 97, 129, 256};
     int64_t count = 100;
     for (const auto& dim : dims) {
