@@ -105,7 +105,7 @@ const std::string HGraphParameters::DEFAULT_HGRAPH_PARAMS = format_map(
             "type": "nsw",
             "{GRAPH_PARAMS_KEY}": {
                 "{GRAPH_PARAM_MAX_DEGREE}": 64,
-                "{GRAPH_PARAM_INIT_MAX_CAPACITY}": 100
+                "{GRAPH_PARAM_INIT_MAX_CAPACITY}": 100001
             }
         },
         "{HGRAPH_BASE_CODES_KEY}": {
@@ -131,7 +131,7 @@ const std::string HGraphParameters::DEFAULT_HGRAPH_PARAMS = format_map(
         },
         "{BUILD_PARAMS_KEY}": {
             "{BUILD_EF_CONSTRUCTION}": 400,
-            "{BUILD_THREAD_COUNT}": 100
+            "{BUILD_THREAD_COUNT}": 1
         }
     })",
     DEFAULT_MAP);

@@ -37,14 +37,22 @@ class MemoryBlockIO : public BasicIO<MemoryBlockIO> {
 public:
     explicit MemoryBlockIO(Allocator* allocator, uint64_t block_size = DEFAULT_BLOCK_SIZE)
         : block_size_(block_size), allocator_(allocator), blocks_(0, allocator) {
+        block_bit_ = 0;
+        while (block_size_ > 0) {
+            block_size_ >>= 1;
+            block_bit_ += 1;
+        }
+        block_bit_ -= 1;
+        in_block_mask_ = (1ULL << block_bit_) - 1;
     }
 
     MemoryBlockIO(const JsonType& io_param, const IndexCommonParam& common_param)
-        : allocator_(common_param.allocator_), blocks_(0, common_param.allocator_) {
+        : MemoryBlockIO(common_param.allocator_) {
         if (io_param.contains(BLOCK_IO_BLOCK_SIZE_KEY)) {
             this->block_size_ =
                 io_param[BLOCK_IO_BLOCK_SIZE_KEY];  // TODO(LHT): trans str to uint64_t
         }
+
     }
 
     ~MemoryBlockIO() override {
@@ -83,7 +91,7 @@ public:
 private:
     [[nodiscard]] inline bool
     check_valid_offset(uint64_t size) const {
-        return size <= blocks_.size() * block_size_;
+        return size <= (blocks_.size() << block_bit_);
     }
 
     inline void
@@ -91,14 +99,14 @@ private:
 
     [[nodiscard]] inline const uint8_t*
     get_data_ptr(uint64_t offset) const {
-        auto block_no = offset / block_size_;
-        auto block_off = offset % block_size_;
+        auto block_no = offset >> block_bit_;
+        auto block_off = offset & in_block_mask_;
         return blocks_[block_no] + block_off;
     }
 
     [[nodiscard]] inline bool
     check_in_one_block(uint64_t off1, uint64_t off2) const {
-        return (off1 / block_size_) == (off2 / block_size_);
+        return (off1 ^ off2) < block_size_;
     }
 
 private:
@@ -109,14 +117,18 @@ private:
     Allocator* const allocator_{nullptr};
 
     static const uint64_t DEFAULT_BLOCK_SIZE = 128 * 1024 * 1024;  // 128MB
+
+    uint64_t block_bit_ = 27;
+
+    uint64_t in_block_mask_ = (1 << 27) - 1;
 };
 
 void
 MemoryBlockIO::WriteImpl(const uint8_t* data, uint64_t size, uint64_t offset) {
     check_and_realloc(size + offset);
     uint64_t cur_size = 0;
-    auto start_no = offset / block_size_;
-    auto start_off = offset % block_size_;
+    auto start_no = offset >> block_bit_;
+    auto start_off = offset & in_block_mask_;
     auto max_size = block_size_ - start_off;
     while (cur_size < size) {
         uint8_t* cur_write = blocks_[start_no] + start_off;
@@ -134,8 +146,8 @@ MemoryBlockIO::ReadImpl(uint64_t size, uint64_t offset, uint8_t* data) const {
     bool ret = check_valid_offset(size + offset);
     if (ret) {
         uint64_t cur_size = 0;
-        auto start_no = offset / block_size_;
-        auto start_off = offset % block_size_;
+        auto start_no = offset >> block_bit_;
+        auto start_off = offset & in_block_mask_;
         auto max_size = block_size_ - start_off;
         while (cur_size < size) {
             const uint8_t* cur_read = blocks_[start_no] + start_off;
@@ -189,7 +201,7 @@ MemoryBlockIO::check_and_realloc(uint64_t size) {
     if (check_valid_offset(size)) {
         return;
     }
-    const uint64_t new_block_count = (size + this->block_size_ - 1) / block_size_;
+    const uint64_t new_block_count = (size + this->block_size_ - 1) >> block_bit_;
     auto cur_block_size = this->blocks_.size();
     while (cur_block_size < new_block_count) {
         this->blocks_.emplace_back((uint8_t*)(allocator_->Allocate(block_size_)));
