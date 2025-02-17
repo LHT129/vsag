@@ -25,7 +25,8 @@ jobs:
         run: make cov
       - name: Run Test
         run: |
-          ./scripts/test_parallel_bg.sh
+          ./build/tests/unittests -d yes ${UT_FILTER} -a --order rand --allow-running-no-tests
+          ./build/tests/functests -d yes ${UT_FILTER} -a --order rand --allow-running-no-tests
           ./build/mockimpl/tests_mockimpl -d yes ${UT_FILTER} --allow-running-no-tests ${UT_SHARD}
       - name: Collect Coverage Info
         run: |
