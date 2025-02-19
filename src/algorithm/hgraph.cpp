@@ -63,7 +63,6 @@ HGraph::HGraph(const HGraphParameterPtr& hgraph_param, const vsag::IndexCommonPa
     if (this->build_thread_count_ > 1) {
         this->build_pool_ = std::make_unique<progschj::ThreadPool>(this->build_thread_count_);
     }
-    this->init_features();
 }
 
 std::vector<int64_t>

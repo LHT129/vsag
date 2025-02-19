@@ -120,7 +120,6 @@ BruteForce::range_search(const DatasetPtr& query,
                          int64_t limited_size) const {
     auto computer = this->inner_codes_->FactoryComputer(query->GetFloat32Vectors());
     MaxHeap heap(this->allocator_.get());
-    auto cur_heap_top = radius;
     if (limited_size < 0) {
         limited_size = std::numeric_limits<int64_t>::max();
     }
@@ -135,7 +134,6 @@ BruteForce::range_search(const DatasetPtr& query,
             if (heap.size() > limited_size) {
                 heap.pop();
             }
-            cur_heap_top = heap.top().first;
         }
     }
     auto dataset_results = Dataset::Make();

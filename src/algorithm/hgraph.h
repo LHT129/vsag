@@ -55,6 +55,11 @@ public:
         return INDEX_TYPE_HGRAPH;
     }
 
+    void
+    InitFeatures() override {
+        return this->init_features();
+    }
+
     std::vector<int64_t>
     Build(const DatasetPtr& data) override;
 

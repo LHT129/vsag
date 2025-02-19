@@ -31,6 +31,7 @@ public:
         : Index(), allocator_(common_param.allocator_) {
         auto param_ptr = T::MappingExternalParamAndCheck(external_param, common_param);
         this->inner_index_ = std::make_shared<T>(param_ptr, common_param);
+        this->inner_index_->InitFeatures();
     }
 
     ~IndexImpl() override {
