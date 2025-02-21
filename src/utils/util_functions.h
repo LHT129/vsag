@@ -52,4 +52,9 @@ try_parse_parameters(JsonType& param_obj, IndexCommonParam index_common_param) {
 std::string
 format_map(const std::string& str, const std::unordered_map<std::string, std::string>& mappings);
 
+void
+mapping_external_param_to_inner(const JsonType& external_json,
+                                ConstParamMap& param_map,
+                                JsonType& inner_json);
+
 }  // namespace vsag

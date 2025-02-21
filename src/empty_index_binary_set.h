@@ -24,6 +24,7 @@ namespace vsag {
 class EmptyIndexBinarySet {
 public:
     static BinarySet
+
     Make(const std::string& name = "EMPTY_INDEX") {
         const std::string empty_str = name;
         size_t num_bytes = empty_str.length();

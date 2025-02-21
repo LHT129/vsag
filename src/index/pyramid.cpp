@@ -132,8 +132,8 @@ Pyramid::build(const DatasetPtr& base) {
     int64_t data_num = base->GetNumElements();
     const auto* data_vectors = base->GetFloat32Vectors();
     const auto* data_ids = base->GetIds();
-    labels_.resize(data_num);
-    std::memcpy(labels_.data(), data_ids, sizeof(LabelType) * data_num);
+    labels_.label_table_.resize(data_num);
+    std::memcpy(labels_.label_table_.data(), data_ids, sizeof(LabelType) * data_num);
     flatten_interface_ptr_->Train(data_vectors, data_num);
     flatten_interface_ptr_->BatchInsertVector(data_vectors, data_num);
 
@@ -320,7 +320,7 @@ Pyramid::search_impl(const DatasetPtr& query, int64_t limit, const SearchFunc& s
     for (auto j = target_size - 1; j >= 0; --j) {
         if (j < target_size) {
             dists[j] = search_result.top().first;
-            ids[j] = labels_[search_result.top().second];
+            ids[j] = labels_.GetLabelById(search_result.top().second);
         }
         search_result.pop();
     }
@@ -416,14 +416,14 @@ Pyramid::GetMemoryUsage() const {
 
 void
 Pyramid::Serialize(StreamWriter& writer) const {
-    StreamWriter::WriteVector(writer, labels_);
+    StreamWriter::WriteVector(writer, labels_.label_table_);
     flatten_interface_ptr_->Serialize(writer);
     root_->Serialize(writer);
 }
 
 void
 Pyramid::Deserialize(StreamReader& reader) {
-    StreamReader::ReadVector(reader, labels_);
+    StreamReader::ReadVector(reader, labels_.label_table_);
     flatten_interface_ptr_->Deserialize(reader);
     root_->Deserialize(reader);
     pool_ = std::make_unique<VisitedListPool>(1,
