@@ -903,7 +903,8 @@ HGraph::init_features() {
     auto name = this->basic_flatten_codes_->GetQuantizerName();
     if (name != QUANTIZATION_TYPE_VALUE_FP32) {
         feature_list_.SetFeature(IndexFeature::NEED_TRAIN);
-    } else {
+    }
+    if (name == QUANTIZATION_TYPE_VALUE_FP32) {
         feature_list_.SetFeature(IndexFeature::SUPPORT_CAL_DISTANCE_BY_ID);
     }
 

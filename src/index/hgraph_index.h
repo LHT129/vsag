@@ -97,6 +97,11 @@ public:
         SAFE_CALL(return this->hgraph_->CalculateDistanceById(vector, id));
     };
 
+    tl::expected<DatasetPtr, Error>
+    CalDistanceById(const float* vector, const int64_t* ids, int64_t count) const override {
+        SAFE_CALL(return this->cal_dist_by_id(vector, ids, count));
+    };
+
     tl::expected<BinarySet, Error>
     Serialize() const override {
         SAFE_CALL(return this->hgraph_->Serialize());
@@ -145,6 +150,23 @@ public:
     [[nodiscard]] bool
     CheckIdExist(int64_t id) const override {
         return this->hgraph_->CheckIdExist(id);
+    }
+
+    tl::expected<DatasetPtr, Error>
+    cal_dist_by_id(const float* vector, const int64_t* ids, int64_t count) const {
+        auto result = Dataset::Make();
+        result->Owner(true, allocator_.get());
+        auto* distances = (float*)allocator_->Allocate(sizeof(float) * count);
+        result->Distances(distances);
+        for (int64_t i = 0; i < count; ++i) {
+            auto ret = this->CalcDistanceById(vector, ids[i]);
+            if (not ret.has_value()) {
+                LOG_ERROR_AND_RETURNS(ErrorType::INVALID_ARGUMENT,
+                                      fmt::format("failed to find id: {}", ids[i]));
+            }
+            distances[i] = ret.value();
+        }
+        return result;
     }
 
 private:
