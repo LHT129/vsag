@@ -644,7 +644,17 @@ HGraph::init_features() {
 
     if (name != QUANTIZATION_TYPE_VALUE_FP32 and name != QUANTIZATION_TYPE_VALUE_BF16) {
         this->index_feature_list_->SetFeature(IndexFeature::NEED_TRAIN);
-    } else {
+    }
+
+    bool have_fp32 = false;
+    if (name == QUANTIZATION_TYPE_VALUE_FP32) {
+        have_fp32 = true;
+    }
+    if (use_reorder_ and
+        this->high_precise_codes_->GetQuantizerName() == QUANTIZATION_TYPE_VALUE_FP32) {
+        have_fp32 = true;
+    }
+    if (have_fp32) {
         this->index_feature_list_->SetFeature(IndexFeature::SUPPORT_CAL_DISTANCE_BY_ID);
     }
 
