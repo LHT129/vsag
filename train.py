@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import tl2cgen
 import treelite
+import time
 
 def calculate_metrics(true_labels, predicted_labels):
     """
@@ -22,7 +23,7 @@ def calculate_metrics(true_labels, predicted_labels):
         包含召回率和精确率的元组。
     """
     # 确保两个数组长度相同
-    assert len(true_labels) == len(predicted_labels), "两个数组长度必须相等"
+    assert len(true_labels) == len(predicted_labels)
 
     # 计算TP, FP, FN
     TP = np.sum((predicted_labels == True) & (true_labels == True)) / len(true_labels)
@@ -39,7 +40,7 @@ def calculate_metrics(true_labels, predicted_labels):
 
 if __name__ == "__main__":
     # 加载数据集
-    data = pd.read_csv("/home/tianlan.lht/code/github/github-vsag/data.csv").to_numpy(dtype="float32")
+    data = pd.read_csv("/home/tianlan.lht/code/vsag/test.csv").to_numpy(dtype="float32")
     # test = pd.read_csv("/home/tianlan.lht/code/github/github-vsag/test.csv").to_numpy(dtype='float32')
     X = data[:,:-1]
     y = data[:,-1]
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     # y_gt = test[:,-1]
 
     # 划分训练集和测试集
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=73)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=72)
 
     # 转换为LightGBM的数据格式
     train_data = lgb.Dataset(X_train, label=y_train)
@@ -58,7 +59,7 @@ if __name__ == "__main__":
         'boosting_type': 'gbdt',
         'objective': 'binary',
         'metric': ['binary_logloss', 'auc'],
-        'learning_rate': 0.05,
+        'learning_rate': 0.02,
         'num_leaves': 31,
         'max_depth': -1,
         'min_child_samples': 20,
@@ -70,31 +71,37 @@ if __name__ == "__main__":
         'verbose': 1
     }
 
-    model = lgb.Booster(model_file="model.txt")
-    # 训练模型
-    # model = lgb.train(params, train_data, num_boost_round=15)
+    # model = lgb.Booster(model_file="model.txt")
+    # 训练模型\
 
+    start = time.time()
+    model = lgb.train(params, train_data, num_boost_round=10)
+    end = time.time()
+    print(end - start)
+    exit()
     # 预测
     y_pred = model.predict(X_test, num_iteration=model.best_iteration)
 
-    TP, FP, FN, TN = calculate_metrics(y_test, y_pred > 0.45)
+    TP, FP, FN, TN = calculate_metrics(y_test, y_pred > 0.65)
 
     print(TP, FP, FN, TN)
+
+    model.save_model("model.txt")
     #
     # y2 = model.predict(X_gt, num_iteration=model.best_iteration)
     #
     # TP, FP, FN, TN = calculate_metrics(y_gt, y2 > 0.4)
 
-    print(TP, FP, FN, TN)
-
-    # 特征重要性
-    feature_importance = model.feature_importance()
-
-    # 打印特征重要性
-    print(feature_importance)
-
-    model = treelite.Model.load('model2.txt', model_format='lightgbm')
+    # print(TP, FP, FN, TN)
+    #
+    # # 特征重要性
+    # feature_importance = model.feature_importance()
+    #
+    # # 打印特征重要性
+    # print(feature_importance)
+    #
+    model = treelite.Model.load('model.txt', model_format='lightgbm')
 
     tl2cgen.generate_c_code(model=model, dirpath="./t2l", params={})
     tl2cgen.generate_cmakelists("./t2l")
-    # model.save_model("model2.txt")
+    # # model.save_model("model2.txt")
