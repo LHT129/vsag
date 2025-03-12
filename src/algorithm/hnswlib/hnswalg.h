@@ -33,9 +33,10 @@
 #include <unordered_set>
 
 #include "../../default_allocator.h"
+#include "../../utils.h"
+#include "header.h"
 #include "hnswlib.h"
 #include "visited_list_pool.h"
-#include "header.h"
 
 namespace hnswlib {
 typedef unsigned int tableint;
@@ -45,8 +46,8 @@ const static float THRESHOLD_ERROR = 1e-6;
 
 class HierarchicalNSW : public AlgorithmInterface<float> {
 private:
-    float max_ = 0;
-    float min_ = 1000000;
+    float max_ = 255;
+    float min_ = 10000.0;
     std::shared_ptr<int8_t[]> data_int8;
     int sq_num_bits_ = -1;
 
@@ -349,7 +350,7 @@ public:
 
     void
     compute_sq_interval() override {
-        int sample_num = std::min(10000, (int)cur_element_count_);
+        int sample_num = std::min(100000, (int)cur_element_count_);
         size_t dim = *(size_t*)dist_func_param_;
         for (int i = 0; i < sample_num; i++) {
             float* data = (float*)getDataByInternalId(i);
@@ -368,7 +369,7 @@ public:
         int8_t scaled;
         for (int d = 0; d < dim; d++) {
             // TODO: max_ can be adjust to 0.5 to improve recall
-            delta = ((data[d] - min_) / (0.5 - min_));
+            delta = ((data[d] - min_) / (max_ - min_));
             if (delta < 0.0) {
                 delta = 0.0;
             }
@@ -402,7 +403,7 @@ public:
                   int size) const {
         std::vector<int32_t> ret(size);
         for (int i = 0; i < size; i++) {
-            ret[i] = INT4_L2_precompute(n1_vec[i], norm2, p1_vec[i], query, 960);
+            ret[i] = INT4_L2_precompute(n1_vec[i], norm2, p1_vec[i], query, 128);
         }
         return ret;
     }
@@ -640,7 +641,7 @@ public:
         float delta;
         uint8_t scaled;
         for (int d = 0; d < dim; ++d) {
-            delta = ((from[d] - min_) / (0.3 - min_));
+            delta = ((from[d] - min_) / float(max_ - min_));
             if (delta < 0.0) {
                 delta = 0.0;
             }
@@ -1281,7 +1282,7 @@ public:
         while (!candidate_set.empty()) {
             hops++;
             std::pair<float, tableint> current_node_pair = candidate_set.top();
-            if (hops == 40) {
+            if (hops == 15) {
                 features.clear();
 //                int N = 79;
 //                auto features2 = top_candidates;
@@ -1301,12 +1302,17 @@ public:
                 features.emplace_back(dist_cmp);
                 features.emplace_back(vsCnt);
                 features.emplace_back(goodCnt);
-//                auto t1 = std::chrono::high_resolution_clock::now();
-                auto pre = Predict(features);
-//                auto t2 = std::chrono::high_resolution_clock::now();
-//                std::cout << "predict cost: \t" << std::chrono::duration<double>(t2 - t1).count() << std::endl;
-                if (pre < 0.45) {
-                    ef=40;
+//
+                double time_cost = 0;
+                double pre;
+                {
+                    vsag::Timer t(time_cost);
+                    pre = Predict(features);
+                }
+                std::cout << "predict cost: " << time_cost << std::endl;
+
+                if (pre < 0.65) {
+                    ef=18;
                 }
             }
             if ((-current_node_pair.first) > lowerBound &&
