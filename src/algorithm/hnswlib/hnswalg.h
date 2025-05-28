@@ -1281,7 +1281,7 @@ public:
         while (!candidate_set.empty()) {
             hops++;
             std::pair<float, tableint> current_node_pair = candidate_set.top();
-            if (hops == 15) {
+            if (hops == 40) {
                 features.clear();
 //                int N = 79;
 //                auto features2 = top_candidates;

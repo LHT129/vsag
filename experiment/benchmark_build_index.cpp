@@ -8,7 +8,7 @@
 #include "data_loader.h"
 #include "omp.h"
 
-std::string dataset = "sift-128-euclidean";
+std::string dataset = "gist-960-euclidean";
 int target_npts = -1;
 bool use_static = false;
 int sq_num_bits = -1;
@@ -425,16 +425,16 @@ int search(std::vector<uint32_t> efs, uint32_t k = 10) {
             double time_cost = 0;
             vsag::DatasetPtr ann_result;
             single_query->Float32Vectors(query->GetFloat32Vectors() + i * expected_dim);
-//            auto newEf = OptQuery(single_query, index, k, ef_search);
-//            auto label = (newEf > 15 ? 1 : 0);
-//            auto search_parameters = fmt::format(search_parameters_json, ef_search, 1);
-//            ann_result = *index->KnnSearch(single_query, k, search_parameters);
-//            auto features = index->GetFeatures();
-//            for (auto fea : features) {
-//                off << fea << ",";
-//            }
-//            off << label << "\n";
-            auto search_parameters = fmt::format(search_parameters_json, ef_search, 0);
+            auto newEf = OptQuery(single_query, index, k, ef_search);
+            auto label = (newEf > 40 ? 1 : 0);
+            auto search_parameters = fmt::format(search_parameters_json, ef_search, 1);
+            ann_result = *index->KnnSearch(single_query, k, search_parameters);
+            auto features = index->GetFeatures();
+            for (auto fea : features) {
+                off << fea << ",";
+            }
+            off << label << std::endl;
+            search_parameters = fmt::format(search_parameters_json, ef_search, 0);
             {
                 vsag::Timer t(time_cost);
                 ann_result = *index->KnnSearch(single_query, k, search_parameters);
@@ -466,7 +466,7 @@ int search(std::vector<uint32_t> efs, uint32_t k = 10) {
 
 int main() {
     // metadata
-    dataset = "sift-128-euclidean";
+    dataset = "gist-960-euclidean";
     target_npts = -1;
     use_static = false;
     sq_num_bits = -1;
@@ -478,10 +478,10 @@ int main() {
 
     // search
     std::vector<uint32_t> efs;
-    efs.resize(100, 48);
+    efs.resize(100, 80);
 //    std::iota(efs.begin(), efs.end(), 50);
     for (int round = 0; round < 1; round++) {
-//        sq_num_bits = 4;
+        sq_num_bits = 4;
         search(efs);
     }
 }
