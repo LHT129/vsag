@@ -514,8 +514,9 @@ void
 RaBitQuantizer<metric>::ProcessQueryImpl(const DataType* query,
                                          Computer<RaBitQuantizer>& computer) const {
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(query_code_size_));
-        std::fill(computer.buf_, computer.buf_ + query_code_size_, 0);
+        computer.GetBuf() =
+            reinterpret_cast<uint8_t*>(this->allocator_->Allocate(query_code_size_));
+        std::fill(computer.GetBuf(), computer.GetBuf() + query_code_size_, 0);
 
         Vector<DataType> pca_data(this->dim_, 0, this->allocator_);
         Vector<DataType> transformed_data(this->dim_, 0, this->allocator_);
@@ -545,23 +546,23 @@ RaBitQuantizer<metric>::ProcessQueryImpl(const DataType* query,
             sq4_quantizer.EncodeOneImpl(normed_data.data(), tmp_codes.data());
 
             // re-order and store codes
-            ReOrderSQ4(tmp_codes.data(), computer.buf_);
+            ReOrderSQ4(tmp_codes.data(), computer.GetBuf());
 
             // store info
             auto lb_and_diff = sq4_quantizer.GetLBandDiff();
             DataType lower_bound = lb_and_diff.first;
             DataType delta = lb_and_diff.second / 15.0;
-            *(DataType*)(computer.buf_ + query_offset_lb_) = lower_bound;
-            *(DataType*)(computer.buf_ + query_offset_delta_) = delta;
-            *(sum_type*)(computer.buf_ + query_offset_sum_) =
+            *(DataType*)(computer.GetBuf() + query_offset_lb_) = lower_bound;
+            *(DataType*)(computer.GetBuf() + query_offset_delta_) = delta;
+            *(sum_type*)(computer.GetBuf() + query_offset_sum_) =
                 sq4_quantizer.GetCodesSum(tmp_codes.data());
         } else {
             // store codes
-            memcpy(computer.buf_, normed_data.data(), normed_data.size() * sizeof(DataType));
+            memcpy(computer.GetBuf(), normed_data.data(), normed_data.size() * sizeof(DataType));
         }
 
         // 5. store norm
-        *(norm_type*)(computer.buf_ + query_offset_norm_) = query_norm;
+        *(norm_type*)(computer.GetBuf() + query_offset_norm_) = query_norm;
     } catch (std::bad_alloc& e) {
         logger::error("bad alloc when init computer buf");
         throw e;
@@ -573,7 +574,7 @@ void
 RaBitQuantizer<metric>::ComputeDistImpl(Computer<RaBitQuantizer>& computer,
                                         const uint8_t* codes,
                                         float* dists) const {
-    dists[0] = this->ComputeQueryBaseImpl(computer.buf_, codes);
+    dists[0] = this->ComputeQueryBaseImpl(computer.GetBuf(), codes);
 }
 
 template <MetricType metric>
@@ -591,7 +592,7 @@ RaBitQuantizer<metric>::ScanBatchDistImpl(Computer<RaBitQuantizer<metric>>& comp
 template <MetricType metric>
 void
 RaBitQuantizer<metric>::ReleaseComputerImpl(Computer<RaBitQuantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>

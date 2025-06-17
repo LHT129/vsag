@@ -277,14 +277,14 @@ BucketDataCell<QuantTmpl, IOTmpl>::insert_vector_with_locate(const float* vector
                                                              const InnerIdType& offset_id,
                                                              const float* centroid) {
     ByteBuffer codes(static_cast<uint64_t>(code_size_), this->allocator_);
-    this->quantizer_->EncodeOne(vector, codes.data);
+    this->quantizer_->EncodeOne(vector, codes.GetData());
     this->datas_[bucket_id]->Write(
-        codes.data,
+        codes.GetData(),
         code_size_,
         static_cast<uint64_t>(offset_id) * static_cast<uint64_t>(code_size_));
     if (use_residual_ && this->quantizer_->Metric() == MetricType::METRIC_TYPE_L2SQR && centroid) {
         Vector<float> compress_vector(this->quantizer_->GetDim(), this->allocator_);
-        this->quantizer_->DecodeOne(codes.data, compress_vector.data());
+        this->quantizer_->DecodeOne(codes.GetData(), compress_vector.data());
         residual_bias_[bucket_id][offset_id] =
             -2 * FP32ComputeIP(centroid, compress_vector.data(), this->quantizer_->GetDim()) -
             FP32ComputeIP(centroid, centroid, this->quantizer_->GetDim());
@@ -334,8 +334,8 @@ BucketDataCell<QuantTmpl, IOTmpl>::package_fastscan() {
         const auto* codes = this->datas_[i]->Read(code_size_ * bucket_size, 0, need_release);
         InnerIdType begin = 0;
         while (begin < bucket_size) {
-            quantizer_->Package32(codes + begin * code_size_, buffer.data);
-            this->datas_[i]->Write(buffer.data, code_size_ * 32, begin * code_size_);
+            quantizer_->Package32(codes + begin * code_size_, buffer.GetData());
+            this->datas_[i]->Write(buffer.GetData(), code_size_ * 32, begin * code_size_);
             begin += 32;
         }
         if (need_release) {
@@ -358,8 +358,8 @@ BucketDataCell<QuantTmpl, IOTmpl>::unpack_fastscan() {
         InnerIdType begin = 0;
         while (begin < bucket_size) {
             const uint8_t* src_block = codes + begin * code_size_;
-            quantizer_->Unpack32(src_block, buffer.data);
-            this->datas_[i]->Write(buffer.data, code_size_ * 32, begin * code_size_);
+            quantizer_->Unpack32(src_block, buffer.GetData());
+            this->datas_[i]->Write(buffer.GetData(), code_size_ * 32, begin * code_size_);
             begin += 32;
         }
         if (need_release) {

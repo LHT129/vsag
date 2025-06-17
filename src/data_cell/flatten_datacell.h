@@ -196,9 +196,10 @@ FlattenDataCell<QuantTmpl, IOTmpl>::InsertVector(const void* vector, InnerIdType
         }
     }
     ByteBuffer codes(static_cast<uint64_t>(code_size_), allocator_);
-    quantizer_->EncodeOne((const float*)vector, codes.data);
-    io_->Write(
-        codes.data, code_size_, static_cast<uint64_t>(idx) * static_cast<uint64_t>(code_size_));
+    quantizer_->EncodeOne((const float*)vector, codes.GetData());
+    io_->Write(codes.GetData(),
+               code_size_,
+               static_cast<uint64_t>(idx) * static_cast<uint64_t>(code_size_));
 }
 
 template <typename QuantTmpl, typename IOTmpl>
@@ -209,14 +210,14 @@ FlattenDataCell<QuantTmpl, IOTmpl>::BatchInsertVector(const void* vectors,
     if (idx_vec == nullptr) {
         ByteBuffer codes(static_cast<uint64_t>(count) * static_cast<uint64_t>(code_size_),
                          allocator_);
-        quantizer_->EncodeBatch((const float*)vectors, codes.data, count);
+        quantizer_->EncodeBatch((const float*)vectors, codes.GetData(), count);
         uint64_t cur_count;
         {
             std::lock_guard lock(mutex_);
             cur_count = total_count_;
             total_count_ += count;
         }
-        io_->Write(codes.data,
+        io_->Write(codes.GetData(),
                    static_cast<uint64_t>(count) * static_cast<uint64_t>(code_size_),
                    cur_count * static_cast<uint64_t>(code_size_));
     } else {
@@ -264,8 +265,8 @@ FlattenDataCell<QuantTmpl, IOTmpl>::query(float* result_dists,
         for (int64_t i = 0; i < id_count; ++i) {
             offsets[i] = static_cast<uint64_t>(idx[i]) * this->code_size_;
         }
-        this->io_->MultiRead(codes.data, sizes.data(), offsets.data(), id_count);
-        computer->ScanBatchDists(id_count, codes.data, result_dists);
+        this->io_->MultiRead(codes.GetData(), sizes.data(), offsets.data(), id_count);
+        computer->ScanBatchDists(id_count, codes.GetData(), result_dists);
         return;
     }
 

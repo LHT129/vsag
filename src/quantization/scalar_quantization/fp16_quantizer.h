@@ -177,8 +177,9 @@ void
 FP16Quantizer<metric>::ProcessQueryImpl(const DataType* query,
                                         Computer<FP16Quantizer>& computer) const {
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
-        this->EncodeOneImpl(query, computer.buf_);
+        computer.GetBuf() =
+            reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
+        this->EncodeOneImpl(query, computer.GetBuf());
     } catch (std::bad_alloc& e) {
         throw VsagException(
             ErrorType::INTERNAL_ERROR, "bad alloc when init computer buf", e.what());
@@ -190,7 +191,7 @@ void
 FP16Quantizer<metric>::ComputeDistImpl(Computer<FP16Quantizer>& computer,
                                        const uint8_t* codes,
                                        float* dists) const {
-    auto* buf = computer.buf_;
+    const auto* buf = computer.GetBuf();
     if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
         dists[0] = FP16ComputeL2Sqr(buf, codes, this->dim_);
     } else if constexpr (metric == MetricType::METRIC_TYPE_IP or
@@ -216,7 +217,7 @@ FP16Quantizer<metric>::ScanBatchDistImpl(Computer<FP16Quantizer<metric>>& comput
 template <MetricType metric>
 void
 FP16Quantizer<metric>::ReleaseComputerImpl(Computer<FP16Quantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 }  // namespace vsag

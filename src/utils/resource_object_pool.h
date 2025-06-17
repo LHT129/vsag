@@ -114,7 +114,6 @@ private:
     std::mutex mutex_;
     Allocator* allocator_{nullptr};
 
-private:
     std::shared_ptr<Allocator> owned_allocator_{nullptr};
 };
 

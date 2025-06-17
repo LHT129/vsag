@@ -214,17 +214,17 @@ void
 SQ4Quantizer<metric>::ProcessQueryImpl(const DataType* query,
                                        Computer<SQ4Quantizer>& computer) const {
     try {
-        computer.buf_ =
+        computer.GetBuf() =
             reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->dim_ * sizeof(float)));
 
     } catch (const std::bad_alloc& e) {
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
     if constexpr (metric == MetricType::METRIC_TYPE_COSINE) {
-        Normalize(query, reinterpret_cast<float*>(computer.buf_), this->dim_);
+        Normalize(query, reinterpret_cast<float*>(computer.GetBuf()), this->dim_);
     } else {
-        memcpy(computer.buf_, query, this->dim_ * sizeof(float));
+        memcpy(computer.GetBuf(), query, this->dim_ * sizeof(float));
     }
 }
 
@@ -233,7 +233,7 @@ void
 SQ4Quantizer<metric>::ComputeDistImpl(Computer<SQ4Quantizer>& computer,
                                       const uint8_t* codes,
                                       float* dists) const {
-    auto* buf = reinterpret_cast<float*>(computer.buf_);
+    auto* buf = reinterpret_cast<float*>(computer.GetBuf());
     if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
         dists[0] = SQ4ComputeL2Sqr(buf, codes, lower_bound_.data(), diff_.data(), this->dim_);
     } else if constexpr (metric == MetricType::METRIC_TYPE_IP or
@@ -260,7 +260,7 @@ SQ4Quantizer<metric>::ScanBatchDistImpl(Computer<SQ4Quantizer<metric>>& computer
 template <MetricType metric>
 void
 SQ4Quantizer<metric>::ReleaseComputerImpl(Computer<SQ4Quantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>

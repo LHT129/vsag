@@ -25,7 +25,7 @@ namespace vsag {
 
 class BufferIO : public BasicIO<BufferIO> {
 public:
-    BufferIO(std::string filename, Allocator* allocator)
+    explicit BufferIO(std::string filename, Allocator* allocator)
         : BasicIO<BufferIO>(allocator), filepath_(std::move(filename)) {
         this->fd_ = open(filepath_.c_str(), O_CREAT | O_RDWR, 0644);
     }
@@ -36,7 +36,9 @@ public:
     explicit BufferIO(const IOParamPtr& param, const IndexCommonParam& common_param)
         : BufferIO(std::dynamic_pointer_cast<BufferIOParameter>(param), common_param){};
 
-    ~BufferIO() override = default;
+    ~BufferIO() override {
+        close(this->fd_);
+    }
 
     inline void
     WriteImpl(const uint8_t* data, uint64_t size, uint64_t offset) {

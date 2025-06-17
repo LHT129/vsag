@@ -31,7 +31,7 @@ public:
 
 public:
     explicit VisitedList(InnerIdType max_size, Allocator* allocator)
-        : max_size_(max_size), allocator_(allocator) {
+        : ResourceObject(), max_size_(max_size), allocator_(allocator) {
         this->list_ = reinterpret_cast<VisitedListType*>(
             allocator_->Allocate((uint64_t)max_size * sizeof(VisitedListType)));
         memset(list_, 0, max_size_ * sizeof(VisitedListType));

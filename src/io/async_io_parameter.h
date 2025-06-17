@@ -24,13 +24,20 @@ public:
 
     explicit AsyncIOParameter(const JsonType& json);
 
+    ~AsyncIOParameter() override = default;
+
     void
     FromJson(const JsonType& json) override;
 
     JsonType
     ToJson() override;
 
-public:
+    const std::string&
+    GetPath() const {
+        return this->path_;
+    }
+
+private:
     std::string path_{};
 };
 

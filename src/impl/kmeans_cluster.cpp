@@ -74,8 +74,8 @@ KMeansCluster::Run(uint32_t k,
     std::vector<std::future<void>> futures;
     ByteBuffer y_sqr_buffer(static_cast<uint64_t>(k) * sizeof(float), allocator_);
     ByteBuffer distances_buffer(static_cast<uint64_t>(k) * QUERY_BS * sizeof(float), allocator_);
-    auto* y_sqr = reinterpret_cast<float*>(y_sqr_buffer.data);
-    auto* distances = reinterpret_cast<float*>(distances_buffer.data);
+    auto* y_sqr = reinterpret_cast<float*>(y_sqr_buffer.GetData());
+    auto* distances = reinterpret_cast<float*>(distances_buffer.GetData());
 
     logger::debug("KMeansCluster::Run k: {}, count: {}, iter: {}", k, count, iter);
     if (k < THRESHOLD_FOR_HGRAPH) {

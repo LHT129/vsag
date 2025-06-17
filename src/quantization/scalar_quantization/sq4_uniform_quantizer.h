@@ -314,8 +314,9 @@ void
 SQ4UniformQuantizer<metric>::ProcessQueryImpl(const DataType* query,
                                               Computer<SQ4UniformQuantizer>& computer) const {
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
-        this->EncodeOneImpl(query, computer.buf_);
+        computer.GetBuf() =
+            reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
+        this->EncodeOneImpl(query, computer.GetBuf());
     } catch (const std::bad_alloc& e) {
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
@@ -326,7 +327,7 @@ void
 SQ4UniformQuantizer<metric>::ComputeDistImpl(Computer<SQ4UniformQuantizer>& computer,
                                              const uint8_t* codes,
                                              float* dists) const {
-    dists[0] = this->ComputeImpl(computer.buf_, codes);
+    dists[0] = this->ComputeImpl(computer.GetBuf(), codes);
 }
 
 template <MetricType metric>
@@ -345,7 +346,7 @@ template <MetricType metric>
 void
 SQ4UniformQuantizer<metric>::ReleaseComputerImpl(
     Computer<SQ4UniformQuantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>

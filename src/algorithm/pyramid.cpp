@@ -173,7 +173,7 @@ Pyramid::Build(const DatasetPtr& base) {
     const auto& no_build_levels = pyramid_param_->no_build_levels;
 
     resize(data_num);
-    std::memcpy(label_table_->label_table_.data(), data_ids, sizeof(LabelType) * data_num);
+    std::memcpy(label_table_->GetLabelTable().data(), data_ids, sizeof(LabelType) * data_num);
 
     flatten_interface_ptr_->Train(data_vectors, data_num);
     flatten_interface_ptr_->BatchInsertVector(data_vectors, data_num);
@@ -306,14 +306,14 @@ Pyramid::GetMemoryUsage() const {
 
 void
 Pyramid::Serialize(StreamWriter& writer) const {
-    StreamWriter::WriteVector(writer, label_table_->label_table_);
+    StreamWriter::WriteVector(writer, label_table_->GetLabelTable());
     flatten_interface_ptr_->Serialize(writer);
     root_->Serialize(writer);
 }
 
 void
 Pyramid::Deserialize(StreamReader& reader) {
-    StreamReader::ReadVector(reader, label_table_->label_table_);
+    StreamReader::ReadVector(reader, label_table_->GetLabelTable());
     flatten_interface_ptr_->Deserialize(reader);
     root_->Deserialize(reader);
     pool_ = std::make_unique<VisitedListPool>(
@@ -346,7 +346,7 @@ Pyramid::Add(const DatasetPtr& base) {
     }
     std::shared_lock<std::shared_mutex> lock(resize_mutex_);
 
-    std::memcpy(label_table_->label_table_.data() + local_cur_element_count,
+    std::memcpy(label_table_->GetLabelTable().data() + local_cur_element_count,
                 data_ids,
                 sizeof(LabelType) * data_num);
 
@@ -403,7 +403,7 @@ Pyramid::resize(int64_t new_max_capacity) {
         return;
     }
     pool_ = std::make_unique<VisitedListPool>(1, allocator_, new_max_capacity, allocator_);
-    label_table_->label_table_.resize(new_max_capacity);
+    label_table_->GetLabelTable().resize(new_max_capacity);
     flatten_interface_ptr_->Resize(new_max_capacity);
     max_capacity_ = new_max_capacity;
 }

@@ -24,6 +24,8 @@ public:
 
     explicit BufferIOParameter(const JsonType& json);
 
+    ~BufferIOParameter() override = default;
+
     void
     FromJson(const JsonType& json) override;
 

@@ -271,7 +271,7 @@ PQFastScanQuantizer<metric>::ProcessQueryImpl(const DataType* query,
             cur_query = norm_vec.data();
         }
         Vector<float> lookup_table(this->pq_dim_ * CENTROIDS_PER_SUBSPACE, this->allocator_);
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(
+        computer.GetBuf() = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(
             this->pq_dim_ * CENTROIDS_PER_SUBSPACE * sizeof(uint8_t) + 2 * sizeof(float)));
         for (int i = 0; i < pq_dim_; ++i) {
             const auto* per_query = cur_query + i * subspace_dim_;
@@ -307,16 +307,16 @@ PQFastScanQuantizer<metric>::ProcessQueryImpl(const DataType* query,
         auto diff = upper - lower;
         int64_t j = 0;
         for (; j < this->pq_dim_ * CENTROIDS_PER_SUBSPACE; ++j) {
-            computer.buf_[j] = (lookup_table[j] - lower) / diff * 255;
+            computer.GetBuf()[j] = (lookup_table[j] - lower) / diff * 255;
         }
-        auto* sq_info = reinterpret_cast<float*>(computer.buf_ + j);
+        auto* sq_info = reinterpret_cast<float*>(computer.GetBuf() + j);
         sq_info[0] = diff;
         sq_info[1] = lower;
     } catch (const std::bad_alloc& e) {
-        if (computer.buf_ != nullptr) {
-            this->allocator_->Deallocate(computer.buf_);
+        if (computer.GetBuf() != nullptr) {
+            this->allocator_->Deallocate(computer.GetBuf());
         }
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
 }
@@ -337,7 +337,7 @@ PQFastScanQuantizer<metric>::ScanBatchDistImpl(Computer<PQFastScanQuantizer<metr
                                                const uint8_t* codes,
                                                float* dists) const {
     auto* sq_info =
-        reinterpret_cast<float*>(computer.buf_ + this->pq_dim_ * CENTROIDS_PER_SUBSPACE);
+        reinterpret_cast<float*>(computer.GetBuf() + this->pq_dim_ * CENTROIDS_PER_SUBSPACE);
     auto diff = sq_info[0];
     auto lower = sq_info[1];
     auto map_int32_to_float = [&](int32_t* from, float* to, int64_t map_count) {
@@ -353,7 +353,7 @@ PQFastScanQuantizer<metric>::ScanBatchDistImpl(Computer<PQFastScanQuantizer<metr
     uint64_t block_count = count / BLOCK_SIZE_PACKAGE;
     Vector<int32_t> tmp_dist(BLOCK_SIZE_PACKAGE, 0, this->allocator_);
     for (int64_t i = 0; i < block_count; ++i) {
-        PQFastScanLookUp32(computer.buf_, codes, this->pq_dim_, tmp_dist.data());
+        PQFastScanLookUp32(computer.GetBuf(), codes, this->pq_dim_, tmp_dist.data());
         map_int32_to_float(tmp_dist.data(), dists, BLOCK_SIZE_PACKAGE);
         codes += BLOCK_SIZE_PACKAGE * this->code_size_;
         dists += BLOCK_SIZE_PACKAGE;
@@ -361,7 +361,7 @@ PQFastScanQuantizer<metric>::ScanBatchDistImpl(Computer<PQFastScanQuantizer<metr
     }
 
     if (count > block_count * BLOCK_SIZE_PACKAGE) {
-        PQFastScanLookUp32(computer.buf_, codes, this->pq_dim_, tmp_dist.data());
+        PQFastScanLookUp32(computer.GetBuf(), codes, this->pq_dim_, tmp_dist.data());
         map_int32_to_float(tmp_dist.data(), dists, count - block_count * BLOCK_SIZE_PACKAGE);
     }
 }
@@ -386,7 +386,7 @@ template <MetricType metric>
 void
 PQFastScanQuantizer<metric>::ReleaseComputerImpl(
     Computer<PQFastScanQuantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>

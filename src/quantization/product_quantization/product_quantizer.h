@@ -330,13 +330,13 @@ ProductQuantizer<metric>::ProcessQueryImpl(const DataType* query,
                 }
             }
         }
-        computer.buf_ = reinterpret_cast<uint8_t*>(lookup_table);
+        computer.GetBuf() = reinterpret_cast<uint8_t*>(lookup_table);
 
     } catch (const std::bad_alloc& e) {
-        if (computer.buf_ != nullptr) {
-            this->allocator_->Deallocate(computer.buf_);
+        if (computer.GetBuf() != nullptr) {
+            this->allocator_->Deallocate(computer.GetBuf());
         }
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
 }
@@ -346,7 +346,7 @@ void
 ProductQuantizer<metric>::ComputeDistImpl(Computer<ProductQuantizer>& computer,
                                           const uint8_t* codes,
                                           float* dists) const {
-    auto* lut = reinterpret_cast<float*>(computer.buf_);
+    const auto* lut = reinterpret_cast<const float*>(computer.GetBuf());
     float dist = 0.0F;
     int64_t i = 0;
     for (; i + 4 < pq_dim_; i += 4) {
@@ -384,7 +384,7 @@ ProductQuantizer<metric>::ComputeDistsBatch4Impl(Computer<ProductQuantizer<metri
                                                  float& dists2,
                                                  float& dists3,
                                                  float& dists4) const {
-    auto* lut = reinterpret_cast<float*>(computer.buf_);
+    const auto* lut = reinterpret_cast<const float*>(computer.GetBuf());
 
     float d0 = 0.0F, d1 = 0.0F, d2 = 0.0F, d3 = 0.0F;
 
@@ -475,7 +475,7 @@ ProductQuantizer<metric>::DeserializeImpl(StreamReader& reader) {
 template <MetricType metric>
 void
 ProductQuantizer<metric>::ReleaseComputerImpl(Computer<ProductQuantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>

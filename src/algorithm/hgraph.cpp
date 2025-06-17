@@ -660,11 +660,11 @@ HGraph::serialize_basic_info(StreamWriter& writer) const {
     StreamWriter::WriteObj(writer, this->mult_);
     auto capacity = this->max_capacity_.load();
     StreamWriter::WriteObj(writer, capacity);
-    StreamWriter::WriteVector(writer, this->label_table_->label_table_);
+    StreamWriter::WriteVector(writer, this->label_table_->GetLabelTable());
 
-    uint64_t size = this->label_table_->label_remap_.size();
+    uint64_t size = this->label_table_->GetLabelRemap().size();
     StreamWriter::WriteObj(writer, size);
-    for (const auto& pair : this->label_table_->label_remap_) {
+    for (const auto& pair : this->label_table_->GetLabelRemap()) {
         auto key = pair.first;
         StreamWriter::WriteObj(writer, key);
         StreamWriter::WriteObj(writer, pair.second);
@@ -763,7 +763,7 @@ HGraph::deserialize_basic_info(StreamReader& reader) {
     InnerIdType capacity;
     StreamReader::ReadObj(reader, capacity);
     this->max_capacity_.store(capacity);
-    StreamReader::ReadVector(reader, this->label_table_->label_table_);
+    StreamReader::ReadVector(reader, this->label_table_->GetLabelTable());
 
     uint64_t size;
     StreamReader::ReadObj(reader, size);
@@ -772,7 +772,7 @@ HGraph::deserialize_basic_info(StreamReader& reader) {
         StreamReader::ReadObj(reader, key);
         InnerIdType value;
         StreamReader::ReadObj(reader, value);
-        this->label_table_->label_remap_.emplace(key, value);
+        this->label_table_->GetLabelRemap().emplace(key, value);
     }
 }
 
@@ -786,8 +786,8 @@ HGraph::CalcDistanceById(const float* query, int64_t id) const {
     auto computer = flat->FactoryComputer(query);
     {
         std::shared_lock<std::shared_mutex> lock(this->label_lookup_mutex_);
-        auto iter = this->label_table_->label_remap_.find(id);
-        if (iter == this->label_table_->label_remap_.end()) {
+        auto iter = this->label_table_->GetLabelRemap().find(id);
+        if (iter == this->label_table_->GetLabelRemap().end()) {
             throw VsagException(ErrorType::INVALID_ARGUMENT,
                                 fmt::format("failed to find id: {}", id));
         }
@@ -813,8 +813,8 @@ HGraph::CalDistanceById(const float* query, const int64_t* ids, int64_t count) c
     {
         std::shared_lock<std::shared_mutex> lock(this->label_lookup_mutex_);
         for (int64_t i = 0; i < count; ++i) {
-            auto iter = this->label_table_->label_remap_.find(ids[i]);
-            if (iter == this->label_table_->label_remap_.end()) {
+            auto iter = this->label_table_->GetLabelRemap().find(ids[i]);
+            if (iter == this->label_table_->GetLabelRemap().end()) {
                 logger::debug(fmt::format("failed to find id: {}", ids[i]));
                 invalid_id_loc.push_back(i);
                 continue;
@@ -834,10 +834,10 @@ HGraph::GetMinAndMaxId() const {
     int64_t min_id = INT64_MAX;
     int64_t max_id = INT64_MIN;
     std::shared_lock<std::shared_mutex> lock(this->label_lookup_mutex_);
-    if (this->label_table_->label_remap_.empty()) {
+    if (this->label_table_->GetLabelRemap().empty()) {
         throw VsagException(ErrorType::INTERNAL_ERROR, "Label map size is zero");
     }
-    for (auto& it : this->label_table_->label_remap_) {
+    for (auto& it : this->label_table_->GetLabelRemap()) {
         max_id = it.first > max_id ? it.first : max_id;
         min_id = it.first < min_id ? it.first : min_id;
     }
@@ -934,7 +934,7 @@ HGraph::resize(uint64_t new_size) {
     if (cur_size < new_size_power_2) {
         this->neighbors_mutex_->Resize(new_size_power_2);
         pool_ = std::make_shared<VisitedListPool>(1, allocator_, new_size_power_2, allocator_);
-        this->label_table_->Resize(new_size_power_2);
+        this->label_table_->GetLabelTable().resize(new_size_power_2);
         bottom_graph_->Resize(new_size_power_2);
         this->max_capacity_.store(new_size_power_2);
         this->basic_flatten_codes_->Resize(new_size_power_2);

@@ -20,17 +20,27 @@
 namespace vsag {
 class ByteBuffer {
 public:
-    ByteBuffer(uint64_t size, Allocator* allocator) : allocator(allocator) {
-        data = static_cast<uint8_t*>(allocator->Allocate(size));
+    ByteBuffer(uint64_t size, Allocator* allocator) : allocator_(allocator) {
+        data_ = static_cast<uint8_t*>(allocator_->Allocate(size));
     }
 
     ~ByteBuffer() {
-        allocator->Deallocate(data);
+        allocator_->Deallocate(data_);
+    }
+
+    uint8_t*
+    GetData() {
+        return data_;
+    }
+
+    const uint8_t*
+    GetData() const {
+        return data_;
     }
 
 public:
-    uint8_t* data;
+    uint8_t* data_;
 
-    Allocator* allocator;
+    Allocator* const allocator_;
 };
 }  // namespace vsag

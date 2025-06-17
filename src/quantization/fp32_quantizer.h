@@ -192,15 +192,16 @@ void
 FP32Quantizer<metric>::ProcessQueryImpl(const DataType* query,
                                         Computer<FP32Quantizer<metric>>& computer) const {
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
+        computer.GetBuf() =
+            reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
     } catch (const std::bad_alloc& e) {
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
     if constexpr (metric == MetricType::METRIC_TYPE_COSINE) {
-        Normalize(query, reinterpret_cast<float*>(computer.buf_), this->dim_);
+        Normalize(query, reinterpret_cast<float*>(computer.GetBuf()), this->dim_);
     } else {
-        memcpy(computer.buf_, query, this->code_size_);
+        memcpy(computer.GetBuf(), query, this->code_size_);
     }
 }
 
@@ -211,11 +212,11 @@ FP32Quantizer<metric>::ComputeDistImpl(Computer<FP32Quantizer<metric>>& computer
                                        float* dists) const {
     if (metric == MetricType::METRIC_TYPE_IP or metric == MetricType::METRIC_TYPE_COSINE) {
         *dists = 1.0F - FP32ComputeIP(reinterpret_cast<const float*>(codes),
-                                      reinterpret_cast<const float*>(computer.buf_),
+                                      reinterpret_cast<const float*>(computer.GetBuf()),
                                       this->dim_);
     } else if (metric == MetricType::METRIC_TYPE_L2SQR) {
         *dists = FP32ComputeL2Sqr(reinterpret_cast<const float*>(codes),
-                                  reinterpret_cast<const float*>(computer.buf_),
+                                  reinterpret_cast<const float*>(computer.GetBuf()),
                                   this->dim_);
     } else {
         *dists = 0.0F;
@@ -235,7 +236,7 @@ FP32Quantizer<metric>::ComputeDistsBatch4Impl(Computer<FP32Quantizer<metric>>& c
                                               float& dists4) const {
     if constexpr (metric == MetricType::METRIC_TYPE_IP or
                   metric == MetricType::METRIC_TYPE_COSINE) {
-        FP32ComputeIPBatch4(reinterpret_cast<const float*>(computer.buf_),
+        FP32ComputeIPBatch4(reinterpret_cast<const float*>(computer.GetBuf()),
                             this->dim_,
                             reinterpret_cast<const float*>(codes1),
                             reinterpret_cast<const float*>(codes2),
@@ -250,7 +251,7 @@ FP32Quantizer<metric>::ComputeDistsBatch4Impl(Computer<FP32Quantizer<metric>>& c
         dists3 = 1.0F - dists3;
         dists4 = 1.0F - dists4;
     } else if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
-        FP32ComputeL2SqrBatch4(reinterpret_cast<const float*>(computer.buf_),
+        FP32ComputeL2SqrBatch4(reinterpret_cast<const float*>(computer.GetBuf()),
                                this->dim_,
                                reinterpret_cast<const float*>(codes1),
                                reinterpret_cast<const float*>(codes2),
@@ -271,7 +272,7 @@ FP32Quantizer<metric>::ComputeDistsBatch4Impl(Computer<FP32Quantizer<metric>>& c
 template <MetricType metric>
 void
 FP32Quantizer<metric>::ReleaseComputerImpl(Computer<FP32Quantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 }  // namespace vsag

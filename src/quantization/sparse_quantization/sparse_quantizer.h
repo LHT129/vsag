@@ -116,7 +116,7 @@ SparseQuantizer<metric>::SerializeImpl(StreamWriter& writer) {
 template <MetricType metric>
 void
 SparseQuantizer<metric>::ReleaseComputerImpl(Computer<SparseQuantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 template <MetricType metric>
@@ -134,7 +134,7 @@ void
 SparseQuantizer<metric>::ComputeDistImpl(Computer<SparseQuantizer>& computer,
                                          const uint8_t* codes,
                                          float* dists) const {
-    dists[0] = ComputeImpl(computer.buf_, codes);
+    dists[0] = ComputeImpl(computer.GetBuf(), codes);
 }
 
 template <MetricType metric>
@@ -143,16 +143,16 @@ SparseQuantizer<metric>::ProcessQueryImpl(const DataType* query,
                                           Computer<SparseQuantizer>& computer) const {
     const auto* sparse_query = reinterpret_cast<const SparseVector*>(query);
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(
+        computer.GetBuf() = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(
             sizeof(uint32_t) + sparse_query->len_ * sizeof(BufferEntry)));
     } catch (const std::bad_alloc& e) {
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         logger::error("bad alloc when init computer buf");
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY,
                             "bad alloc when init computer buf in sparse quantizer");
     }
     if constexpr (metric == MetricType::METRIC_TYPE_IP) {
-        EncodeOneImpl(query, computer.buf_);
+        EncodeOneImpl(query, computer.GetBuf());
     } else {
         throw VsagException(ErrorType::INTERNAL_ERROR,
                             "no support for other metric type in sparse quantizer");

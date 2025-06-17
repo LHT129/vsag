@@ -177,8 +177,9 @@ void
 BF16Quantizer<metric>::ProcessQueryImpl(const DataType* query,
                                         Computer<BF16Quantizer>& computer) const {
     try {
-        computer.buf_ = reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
-        this->EncodeOneImpl(query, computer.buf_);
+        computer.GetBuf() =
+            reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->code_size_));
+        this->EncodeOneImpl(query, computer.GetBuf());
     } catch (const std::bad_alloc& e) {
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
@@ -189,7 +190,7 @@ void
 BF16Quantizer<metric>::ComputeDistImpl(Computer<BF16Quantizer>& computer,
                                        const uint8_t* codes,
                                        float* dists) const {
-    auto* buf = computer.buf_;
+    const auto* buf = computer.GetBuf();
     if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
         dists[0] = BF16ComputeL2Sqr(buf, codes, this->dim_);
     } else if constexpr (metric == MetricType::METRIC_TYPE_IP or
@@ -216,7 +217,7 @@ BF16Quantizer<metric>::ScanBatchDistImpl(Computer<BF16Quantizer<metric>>& comput
 template <MetricType metric>
 void
 BF16Quantizer<metric>::ReleaseComputerImpl(Computer<BF16Quantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 }  // namespace vsag

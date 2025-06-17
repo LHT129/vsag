@@ -23,6 +23,8 @@ class WindowResultQueue {
 public:
     WindowResultQueue();
 
+    virtual ~WindowResultQueue() = default;
+
     void
     Push(float value);
 

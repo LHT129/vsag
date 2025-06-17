@@ -20,7 +20,7 @@ namespace vsag {
 class Timer {
 public:
     explicit Timer(double& ref);
-    ~Timer();
+    virtual ~Timer();
 
 public:
     double& ref_;

@@ -105,12 +105,33 @@ public:
     void
     MergeOther(const LabelTablePtr& other, const IdMapFunction& id_map = nullptr);
 
-public:
+    const UnorderedMap<LabelType, InnerIdType>&
+    GetLabelRemap() const {
+        return this->label_remap_;
+    }
+
+    const Vector<LabelType>&
+    GetLabelTable() const {
+        return this->label_table_;
+    }
+
+    UnorderedMap<LabelType, InnerIdType>&
+    GetLabelRemap() {
+        return this->label_remap_;
+    }
+
+    Vector<LabelType>&
+    GetLabelTable() {
+        return this->label_table_;
+    }
+
+private:
     Vector<LabelType> label_table_;
     UnorderedMap<LabelType, InnerIdType> label_remap_;
 
-    Allocator* allocator_{nullptr};
     std::atomic<int64_t> total_count_{0L};
+
+    Allocator* const allocator_{nullptr};
 };
 
 }  // namespace vsag

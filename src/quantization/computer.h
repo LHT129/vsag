@@ -68,7 +68,22 @@ public:
             *this, codes1, codes2, codes3, codes4, dists1, dists2, dists3, dists4);
     }
 
-public:
+    const uint8_t*
+    GetBuf() const {
+        return buf_;
+    }
+
+    uint8_t*&
+    GetBuf() {
+        return buf_;
+    }
+
+    const T*
+    GetQuantizer() const {
+        return quantizer_;
+    }
+
+private:
     const T* quantizer_{nullptr};
     uint8_t* buf_{nullptr};
 };

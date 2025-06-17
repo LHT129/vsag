@@ -30,7 +30,9 @@ public:
         std::priority_queue<DistanceRecord, Vector<std::pair<float, InnerIdType>>, CompareMin>;
 
 public:
-    StandardHeap(Allocator* allocator, int64_t max_size);
+    explicit StandardHeap(Allocator* allocator, int64_t max_size);
+
+    ~StandardHeap() override = default;
 
     void
     Push(float dist, InnerIdType id) override;

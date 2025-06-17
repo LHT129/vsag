@@ -95,7 +95,7 @@ public:
         : mutex_impl_(mutex_impl), locked_index_(locked_index) {
         mutex_impl_->SharedLock(locked_index_);
     }
-    ~SharedLock() {
+    virtual ~SharedLock() {
         mutex_impl_->SharedUnlock(locked_index_);
     }
 
@@ -110,7 +110,7 @@ public:
         : mutex_impl_(mutex_impl), locked_index_(locked_index) {
         mutex_impl_->Lock(locked_index_);
     }
-    ~LockGuard() {
+    virtual ~LockGuard() {
         mutex_impl_->Unlock(locked_index_);
     }
 

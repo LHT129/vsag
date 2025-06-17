@@ -26,19 +26,22 @@
 namespace vsag {
 class AsyncIO : public BasicIO<AsyncIO> {
 public:
-    AsyncIO(std::string filename, Allocator* allocator)
+    explicit AsyncIO(std::string filename, Allocator* allocator)
         : BasicIO<AsyncIO>(allocator), filepath_(std::move(filename)) {
         this->rfd_ = open(filepath_.c_str(), O_CREAT | O_RDWR | O_DIRECT, 0644);
         this->wfd_ = open(filepath_.c_str(), O_CREAT | O_RDWR, 0644);
     }
 
     explicit AsyncIO(const AsyncIOParameterPtr& io_param, const IndexCommonParam& common_param)
-        : AsyncIO(io_param->path_, common_param.allocator_.get()){};
+        : AsyncIO(io_param->GetPath(), common_param.allocator_.get()){};
 
     explicit AsyncIO(const IOParamPtr& param, const IndexCommonParam& common_param)
         : AsyncIO(std::dynamic_pointer_cast<AsyncIOParameter>(param), common_param){};
 
-    ~AsyncIO() override = default;
+    ~AsyncIO() override {
+        close(this->wfd_);
+        close(this->rfd_);
+    }
 
 public:
     inline void
@@ -70,11 +73,11 @@ public:
             return nullptr;
         }
         DirectIOObject obj(size, offset);
-        auto ret = pread64(this->rfd_, obj.align_data, obj.size, obj.offset);
+        auto ret = pread64(this->rfd_, obj.GetAlignData(), obj.GetSize(), obj.GetOffset());
         if (ret < 0) {
             throw VsagException(ErrorType::INTERNAL_ERROR, fmt::format("pread64 error {}", ret));
         }
-        return obj.data;
+        return obj.GetData();
     }
 
     inline void
@@ -96,7 +99,7 @@ public:
             for (int64_t i = 0; i < count; ++i) {
                 objs[i].Set(sizes[i], offsets[i]);
                 auto& obj = objs[i];
-                io_prep_pread(cb[i], rfd_, obj.align_data, obj.size, obj.offset);
+                io_prep_pread(cb[i], rfd_, obj.GetAlignData(), obj.GetSize(), obj.GetOffset());
                 cb[i]->data = &(objs[i]);
             }
 
@@ -120,9 +123,9 @@ public:
             }
 
             for (int64_t i = 0; i < count; ++i) {
-                memcpy(cur_data, objs[i].data, sizes[i]);
+                memcpy(cur_data, objs[i].GetData(), sizes[i]);
                 cur_data += sizes[i];
-                this->ReleaseImpl(objs[i].data);
+                this->ReleaseImpl(objs[i].GetData());
             }
 
             sizes += count;

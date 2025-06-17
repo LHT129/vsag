@@ -147,8 +147,8 @@ public:
         uint64_t offset = 0;
         while (offset < this->size_) {
             auto cur_size = std::min(SERIALIZE_BUFFER_SIZE, this->size_ - offset);
-            this->Read(cur_size, offset, buffer.data);
-            writer.Write(reinterpret_cast<const char*>(buffer.data), cur_size);
+            this->Read(cur_size, offset, buffer.GetData());
+            writer.Write(reinterpret_cast<const char*>(buffer.GetData()), cur_size);
             offset += cur_size;
         }
     }
@@ -166,8 +166,8 @@ public:
         uint64_t offset = 0;
         while (offset < size) {
             auto cur_size = std::min(SERIALIZE_BUFFER_SIZE, size - offset);
-            reader.Read(reinterpret_cast<char*>(buffer.data), cur_size);
-            this->Write(buffer.data, cur_size, offset);
+            reader.Read(reinterpret_cast<char*>(buffer.GetData()), cur_size);
+            this->Write(buffer.GetData(), cur_size, offset);
             offset += cur_size;
         }
     }

@@ -35,8 +35,8 @@ public:
 
 private:
     unsigned int current_;
-    static const uint32_t A = 1664525;
-    static const uint32_t C = 1013904223;
-    static const uint32_t M = 4294967295;  // 2^32 - 1
+    static constexpr uint32_t A = 1664525;
+    static constexpr uint32_t C = 1013904223;
+    static constexpr uint32_t M = 4294967295;  // 2^32 - 1
 };
 }  // namespace vsag

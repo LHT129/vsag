@@ -208,16 +208,16 @@ void
 SQ8Quantizer<metric>::ProcessQueryImpl(const DataType* query,
                                        Computer<SQ8Quantizer>& computer) const {
     try {
-        computer.buf_ =
+        computer.GetBuf() =
             reinterpret_cast<uint8_t*>(this->allocator_->Allocate(this->dim_ * sizeof(float)));
     } catch (const std::bad_alloc& e) {
-        computer.buf_ = nullptr;
+        computer.GetBuf() = nullptr;
         throw VsagException(ErrorType::NO_ENOUGH_MEMORY, "bad alloc when init computer buf");
     }
     if constexpr (metric == MetricType::METRIC_TYPE_COSINE) {
-        Normalize(query, reinterpret_cast<float*>(computer.buf_), this->dim_);
+        Normalize(query, reinterpret_cast<float*>(computer.GetBuf()), this->dim_);
     } else {
-        memcpy(computer.buf_, query, this->dim_ * sizeof(float));
+        memcpy(computer.GetBuf(), query, this->dim_ * sizeof(float));
     }
 }
 
@@ -226,7 +226,7 @@ void
 SQ8Quantizer<metric>::ComputeDistImpl(Computer<SQ8Quantizer>& computer,
                                       const uint8_t* codes,
                                       float* dists) const {
-    auto* query = reinterpret_cast<float*>(computer.buf_);
+    auto* query = reinterpret_cast<float*>(computer.GetBuf());
 
     if constexpr (metric == MetricType::METRIC_TYPE_L2SQR) {
         *dists = SQ8ComputeL2Sqr(
@@ -269,7 +269,7 @@ SQ8Quantizer<metric>::DeserializeImpl(StreamReader& reader) {
 template <MetricType metric>
 void
 SQ8Quantizer<metric>::ReleaseComputerImpl(Computer<SQ8Quantizer<metric>>& computer) const {
-    this->allocator_->Deallocate(computer.buf_);
+    this->allocator_->Deallocate(computer.GetBuf());
 }
 
 }  // namespace vsag

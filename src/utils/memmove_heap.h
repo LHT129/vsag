@@ -23,8 +23,9 @@ namespace vsag {
 template <bool max_heap = true, bool fixed_size = true>
 class MemmoveHeap : public DistanceHeap {
 public:
-public:
-    MemmoveHeap(Allocator* allocator, int64_t max_size);
+    explicit MemmoveHeap(Allocator* allocator, int64_t max_size);
+
+    ~MemmoveHeap() override = default;
 
     void
     Push(float dist, InnerIdType id) override;

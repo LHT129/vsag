@@ -48,8 +48,10 @@ public:
     };
 
 public:
-    DistanceHeap(Allocator* allocator, int64_t max_size = -1)
+    explicit DistanceHeap(Allocator* allocator, int64_t max_size = -1)
         : allocator_(allocator), max_size_(max_size){};
+
+    virtual ~DistanceHeap() = default;
 
     virtual void
     Push(const DistanceRecord& record) {
@@ -72,7 +74,7 @@ public:
     Empty() const = 0;
 
 protected:
-    Allocator* allocator_{nullptr};
+    Allocator* const allocator_{nullptr};
     int64_t max_size_{-1};
 };
 

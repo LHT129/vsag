@@ -20,9 +20,9 @@
 #include "utils/resource_object_pool.h"
 
 namespace vsag {
-class IOContext : ResourceObject {
+class IOContext : public ResourceObject {
 public:
-    IOContext() {
+    IOContext() : ResourceObject() {
         memset(&ctx_, 0, sizeof(ctx_));
         io_setup(DEFAULT_REQUEST_COUNT, &this->ctx_);
         for (int i = 0; i < DEFAULT_REQUEST_COUNT; ++i) {
