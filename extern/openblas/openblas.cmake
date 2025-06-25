@@ -35,8 +35,8 @@ ExternalProject_Add(
 )
 
 include_directories(${install_dir}/include)
-link_directories (${install_dir}/lib)
-link_directories (${install_dir}/lib64)
+link_directories(${install_dir}/lib)
+link_directories(${install_dir}/lib64)
 
 file(GLOB LIB_DIR_EXIST CHECK_DIRECTORIES LIST_DIRECTORIES true ${install_dir}/lib)
 if(LIB_DIR_EXIST)

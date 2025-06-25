@@ -15,7 +15,7 @@
 
 #include "pca_transformer.h"
 
-#include <fmt/format-inl.h>
+#include <fmt/format.h>
 
 #include "../../logger.h"
 #include "vsag_exception.h"

@@ -19,9 +19,9 @@
 
 #include "data_cell/flatten_datacell.h"
 #include "data_cell/graph_interface.h"
+#include "impl/heap/distance_heap.h"
 #include "lock_strategy.h"
 #include "typing.h"
-#include "utils/distance_heap.h"
 #include "vsag/allocator.h"
 
 namespace vsag {

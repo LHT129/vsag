@@ -15,3 +15,11 @@ set (QUANTIZER_SRC
 )
 
 add_library (quantizer OBJECT ${QUANTIZER_SRC})
+# if(TARGET openblas)
+#     target_link_libraries(quantizer PRIVATE OpenBLAS)
+# endif()
+# if(TARGET mkl)
+#     target_link_libraries(quantizer PRIVATE mkl)
+# endif ()
+# target_link_libraries(quantizer PRIVATE fmt::fmt)
+maybe_add_dependencies (quantizer spdlog openblas mkl)

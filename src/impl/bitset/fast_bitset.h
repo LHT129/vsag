@@ -18,7 +18,7 @@
 #include <shared_mutex>
 
 #include "computable_bitset.h"
-#include "safe_allocator.h"
+#include "impl/allocator/safe_allocator.h"
 #include "typing.h"
 
 namespace vsag {
