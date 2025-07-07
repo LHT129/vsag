@@ -78,13 +78,13 @@ AttributeBucketInvertedDataCell::GetBitsetsByAttr(const Attribute& attr) {
 std::vector<ComputableBitsetPtr>
 AttributeBucketInvertedDataCell::GetBitsetsByAttrAndBucketId(const Attribute& attr,
                                                              BucketIdType bucket_id) {
-    std::shared_lock lock(this->multi_term_2_value_map_mutex_);
+//    std::shared_lock lock(this->multi_term_2_value_map_mutex_);
     if (bucket_id >= this->bucket_mutexes_.size()) {
         return {attr.GetValueCount(), nullptr};
     }
     auto& value_maps = multi_term_2_value_map_[bucket_id];
 
-    std::shared_lock bucket_lock(*this->bucket_mutexes_[bucket_id]);
+//    std::shared_lock bucket_lock(*this->bucket_mutexes_[bucket_id]);
 
     if (value_maps == nullptr or value_maps->find(attr.name_) == value_maps->end()) {
         return {attr.GetValueCount(), nullptr};
