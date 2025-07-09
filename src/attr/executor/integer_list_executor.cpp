@@ -131,12 +131,7 @@ IntegerListExecutor::RunWithBucket(BucketIdType bucket_id) {
 
     auto bitset_lists =
         this->attr_index_->GetBitsetsByAttrAndBucketId(*this->filter_attribute_, bucket_id);
-    for (const auto* bitset : bitset_lists) {
-        if (bitset == nullptr) {
-            continue;
-        }
-        this->bitset_->Or(*bitset);
-    }
+    this->bitset_->Or(bitset_lists);
     this->only_bitset_ = true;
     if (this->is_not_in_) {
         this->bitset_->Not();

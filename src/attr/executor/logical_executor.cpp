@@ -42,14 +42,14 @@ FilterPtr
 LogicalExecutor::Run() {
     this->left_->Run();
     this->right_->Run();
-    return this->logical_run();
+    return std::move(this->logical_run());
 }
 
 FilterPtr
 LogicalExecutor::RunWithBucket(BucketIdType bucket_id) {
     this->left_->RunWithBucket(bucket_id);
     this->right_->RunWithBucket(bucket_id);
-    return this->logical_run();
+    return std::move(this->logical_run());
 }
 
 FilterPtr
