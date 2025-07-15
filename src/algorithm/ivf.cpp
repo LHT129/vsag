@@ -606,11 +606,17 @@ IVF::search(const DatasetPtr& query, const InnerSearchParam& param) const {
     auto search_result = DistanceHeap::MakeInstanceBySize<true, false>(this->allocator_, topk);
     const auto& ft = param.is_inner_id_allowed;
     Vector<float> centroid(dim_, allocator_);
+    int good_id_count = 0;
+    int scan_bucket_count = 0;
 
     for (auto& bucket_id : candidate_buckets) {
         if (bucket_id == -1) {
             break;
         }
+        if (scan_bucket_count * 2 >= candidate_buckets.size() and good_id_count > topk * 1.2) {
+            break;
+        }
+        scan_bucket_count++;
         auto bucket_size = bucket_->GetBucketSize(bucket_id);
         const auto* ids = bucket_->GetInnerIds(bucket_id);
         if (bucket_size > dist.size()) {
@@ -640,6 +646,7 @@ IVF::search(const DatasetPtr& query, const InnerSearchParam& param) const {
                 dist[j] -= ip_distance;
                 if constexpr (mode == KNN_SEARCH) {
                     if (search_result->Size() < topk or dist[j] < cur_heap_top) {
+                        good_id_count ++;
                         search_result->Push(dist[j], ids[j]);
                     }
                 } else if constexpr (mode == RANGE_SEARCH) {
