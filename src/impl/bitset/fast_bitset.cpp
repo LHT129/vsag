@@ -22,7 +22,7 @@ namespace vsag {
 
 void
 FastBitset::Set(int64_t pos, bool value) {
-    std::lock_guard<std::shared_mutex> lock(mutex_);
+    // std::lock_guard<std::shared_mutex> lock(mutex_);
     auto capacity = data_.size() * 64;
     if (pos >= capacity) {
         if (fill_bit_) {
@@ -42,7 +42,7 @@ FastBitset::Set(int64_t pos, bool value) {
 
 bool
 FastBitset::Test(int64_t pos) const {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
+    // std::shared_lock<std::shared_mutex> lock(mutex_);
     auto capacity = data_.size() * 64;
     if (pos >= capacity) {
         return fill_bit_;
@@ -68,9 +68,9 @@ FastBitset::Or(const ComputableBitset& another) {
     if (fast_another == nullptr) {
         throw VsagException(ErrorType::INTERNAL_ERROR, "bitset not match");
     }
-    std::lock(mutex_, fast_another->mutex_);
-    std::lock_guard<std::shared_mutex> lock1(mutex_, std::adopt_lock);
-    std::lock_guard<std::shared_mutex> lock2(fast_another->mutex_, std::adopt_lock);
+    // std::lock(mutex_, fast_another->mutex_);
+    // std::lock_guard<std::shared_mutex> lock1(mutex_, std::adopt_lock);
+    // std::lock_guard<std::shared_mutex> lock2(fast_another->mutex_, std::adopt_lock);
     if (fast_another->data_.empty()) {
         if (fast_another->fill_bit_) {
             this->Clear();
@@ -109,9 +109,9 @@ FastBitset::And(const ComputableBitset& another) {
     if (fast_another == nullptr) {
         throw VsagException(ErrorType::INTERNAL_ERROR, "bitset not match");
     }
-    std::lock(mutex_, fast_another->mutex_);
-    std::lock_guard<std::shared_mutex> lock1(mutex_, std::adopt_lock);
-    std::lock_guard<std::shared_mutex> lock2(fast_another->mutex_, std::adopt_lock);
+    // std::lock(mutex_, fast_another->mutex_);
+    // std::lock_guard<std::shared_mutex> lock1(mutex_, std::adopt_lock);
+    // std::lock_guard<std::shared_mutex> lock2(fast_another->mutex_, std::adopt_lock);
     if (fast_another->data_.empty()) {
         if (not fast_another->fill_bit_) {
             this->Clear();
