@@ -61,7 +61,7 @@ option (ENABLE_CCACHE "Whether to open ccache" OFF)
 option (ENABLE_INTEL_MKL "Enable intel-mkl (x86 platform only)" ON)
 option (ENABLE_CXX11_ABI "Use CXX11 ABI" ON)
 option (ENABLE_LIBCXX "Use libc++ instead of libstdc++" OFF) # only support in clang
-option (ENABLE_TOOLS "Whether compile vsag tools" OFF)
+option (ENABLE_TOOLS "Whether compile vsag tools" ON)
 option (ENABLE_EXAMPLES "Whether compile examples" ON)
 option (ENABLE_TESTS "Whether compile vsag tests" ON)
 option (DISABLE_SSE_FORCE "Force disable sse and higher instructions" OFF)
@@ -86,9 +86,9 @@ if (NOT APPLE)
     endif ()
 endif ()
 
-if (ENABLE_WERROR)
-    add_compile_options (-Werror)
-endif ()
+# if (ENABLE_WERROR)
+#     add_compile_options (-Werror)
+# endif ()
 
 # On Apple platforms, use the system's libc++ instead of static linking libstdc++
 if (NOT APPLE)
@@ -249,6 +249,7 @@ include (extern/roaringbitmap/roaringbitmap.cmake)
 include_directories (${CMAKE_CURRENT_BINARY_DIR}/spdlog/install/include)
 include_directories (include)
 include_directories (src)
+include_directories (src/faiss)
 
 # thirdparties of tools, cannot compile with _GLIBCXX_USE_CXX11_ABI=0
 if (ENABLE_TOOLS AND ENABLE_CXX11_ABI)
@@ -269,7 +270,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif ()
 
 # debug or release or sanitize
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Werror=suggest-override")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release")

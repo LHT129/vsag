@@ -28,6 +28,7 @@ const char* const INDEX_SINDI = "sindi";
 const char* const INDEX_BRUTE_FORCE = "brute_force";
 const char* const INDEX_IVF = "ivf";
 const char* const INDEX_GNO_IMI = "gno_imi";
+const char* const INDEX_FAISS = "faiss";
 
 const char* const DIM = "dim";
 const char* const NUM_ELEMENTS = "num_elements";
@@ -179,6 +180,9 @@ const char* const BRUTE_FORCE_PRECISE_IO_TYPE = "precise_io_type";
 const char* const BRUTE_FORCE_PRECISE_FILE_PATH = "precise_file_path";
 const char* const BRUTE_FORCE_THREAD_COUNT = "thread_count";
 const char* const BRUTE_FORCE_USE_RESIDUAL = "use_residual";
+
+const char* const FAISS_STRING = "faiss_string";
+const char* const FAISS_INDEX_PATH = "index_path";
 
 const char* const IVF_USE_RESIDUAL = "use_residual";
 const char* const IVF_USE_REORDER = "use_reorder";
