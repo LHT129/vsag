@@ -959,7 +959,12 @@ IVF::SearchWithRequest(const SearchRequest& request) const {
     auto query = request.query_;
     if (request.enable_attribute_filter_ and this->attr_filter_index_ != nullptr) {
         auto& schema = this->attr_filter_index_->field_type_map_;
-        auto expr = AstParse(request.attribute_filter_str_, &schema);
+        ExprPtr expr;
+        if (request.expression_ != nullptr) {
+            expr = request.expression_;
+        } else {
+            expr = AstParse(request.attribute_filter_str_, &schema);
+        }
         for (int64_t i = 0; i < param.parallel_search_thread_count; ++i) {
             auto executor =
                 Executor::MakeInstance(this->allocator_, expr, this->attr_filter_index_);

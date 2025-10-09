@@ -96,7 +96,7 @@ main(int argc, char** argv) {
         "metric_type": "l2",
         "dim": 32,
         "index_param": {
-            "buckets_count": 100,
+            "buckets_count": 1000,
             "base_quantization_type": "fp32",
             "partition_strategy_type": "ivf",
             "ivf_train_type": "kmeans",
@@ -114,7 +114,7 @@ main(int argc, char** argv) {
     //     std::cerr << "Failed to build index: internalError" << std::endl;
     //     exit(-1);
     // }
-    std::ifstream infile("/home/tianlan.lht/suguan.dx_ivf.index.bin.10", std::ios::binary);
+    std::ifstream infile("/home/tianlan.lht/suguan.dx_ivf.index.bin.1010", std::ios::binary);
 
     index->Deserialize(infile);
 
