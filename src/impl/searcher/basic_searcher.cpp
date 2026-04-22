@@ -22,6 +22,7 @@
 #include "algorithm/inner_index_interface.h"
 #include "datacell/flatten_interface.h"
 #include "impl/heap/standard_heap.h"
+#include "impl/reasoning/search_reasoning.h"
 #include "utils/linear_congruential_generator.h"
 #include "vsag/allocator.h"
 
@@ -177,6 +178,9 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
 
         if constexpr (mode == InnerSearchMode::KNN_SEARCH) {
             if ((-current_node_pair.first) > lower_bound && top_candidates->Size() == ef) {
+                if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+                    ctx->reasoning_ctx->SetTermination("lower_bound_reached");
+                }
                 break;
             }
         }
@@ -294,6 +298,9 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
     if (check_func(ep)) {
         top_candidates->Push(dist, ep);
         lower_bound = top_candidates->Top().first;
+        if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+            ctx->reasoning_ctx->RecordVisit(ep, dist, 0);
+        }
     }
     if constexpr (mode == InnerSearchMode::RANGE_SEARCH) {
         if (dist > inner_search_param.radius and not top_candidates->Empty()) {
@@ -306,7 +313,13 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
     while (not candidate_set->Empty()) {
         ++hops;
         if (hops >= inner_search_param.hops_limit) {
+            if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+                ctx->reasoning_ctx->SetTermination("hops_limit_reached");
+            }
             break;
+        }
+        if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+            ctx->reasoning_ctx->AddSearchHop();
         }
         auto current_node_pair = candidate_set->Top();
 
@@ -314,6 +327,9 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
             inner_search_param.time_cost->CheckOvertime()) {
             if (ctx != nullptr and ctx->stats != nullptr) {
                 ctx->stats->is_timeout.store(true, std::memory_order_relaxed);
+            }
+            if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+                ctx->reasoning_ctx->SetTermination("timeout");
             }
             break;
         }
@@ -343,6 +359,9 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
 
         for (uint32_t i = 0; i < count_no_visited; i++) {
             dist = line_dists[i];
+            if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+                ctx->reasoning_ctx->RecordVisit(to_be_visited_id[i], dist, hops);
+            }
             if (top_candidates->Size() < ef || lower_bound > dist ||
                 (mode == RANGE_SEARCH && dist <= inner_search_param.radius)) {
                 candidate_set->Push(-dist, to_be_visited_id[i]);
@@ -361,6 +380,9 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
 
                 if constexpr (mode == KNN_SEARCH) {
                     if (top_candidates->Size() > ef) {
+                        if (ctx != nullptr and ctx->reasoning_ctx != nullptr) {
+                            ctx->reasoning_ctx->RecordEviction(top_candidates->Top().second, hops);
+                        }
                         top_candidates->Pop();
                     }
                 }

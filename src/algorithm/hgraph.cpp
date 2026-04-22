@@ -34,6 +34,7 @@
 #include "impl/heap/standard_heap.h"
 #include "impl/odescent/odescent_graph_builder.h"
 #include "impl/pruning_strategy.h"
+#include "impl/reasoning/search_reasoning.h"
 #include "index/index_impl.h"
 #include "index/iterator_filter.h"
 #include "io/reader_io_parameter.h"
@@ -2173,6 +2174,32 @@ HGraph::SearchWithRequest(const SearchRequest& request) const {
         (1 <= params.ef_search) and (params.ef_search <= ef_search_threshold),
         fmt::format("ef_search({}) must in range[1, {}]", params.ef_search, ef_search_threshold));
 
+    // Setup reasoning context if expected labels are provided
+    std::shared_ptr<ReasoningContext> reasoning_ctx;
+    if (not request.expected_labels_.empty()) {
+        reasoning_ctx = std::make_shared<ReasoningContext>(this->allocator_);
+        reasoning_ctx->SetSearchParams(k, "HGraph", use_reorder_, request.filter_ != nullptr);
+
+        // Build label to inner_id map for expected targets
+        UnorderedMap<int64_t, InnerIdType> label_to_inner_id(this->allocator_);
+        for (const auto& label : request.expected_labels_) {
+            auto [success, inner_id] = label_table_->TryGetIdByLabel(label, true);
+            if (success) {
+                label_to_inner_id[label] = inner_id;
+            }
+        }
+
+        Vector<int64_t> expected_labels_vec(
+            request.expected_labels_.begin(), request.expected_labels_.end(), this->allocator_);
+        reasoning_ctx->InitializeExpectedTargets(expected_labels_vec,
+                                                 label_to_inner_id,
+                                                 static_cast<const float*>(get_data(query)),
+                                                 nullptr,
+                                                 data_type_,
+                                                 dim_);
+        ctx.reasoning_ctx = reasoning_ctx.get();
+    }
+
     std::shared_lock shared_lock(this->global_mutex_);
     // check k
     CHECK_ARGUMENT(k > 0, fmt::format("k({}) must be greater than 0", k));
@@ -2272,6 +2299,13 @@ HGraph::SearchWithRequest(const SearchRequest& request) const {
         return dataset_result;
     }
     auto count = static_cast<const int64_t>(search_result->Size());
+
+    // Collect result inner_ids for reasoning
+    Vector<InnerIdType> result_inner_ids(static_cast<size_t>(count), this->allocator_);
+    for (int64_t j = count - 1; j >= 0; --j) {
+        result_inner_ids[j] = search_result->Top().second;
+    }
+
     auto [dataset_results, dists, ids] = create_fast_dataset(count, ctx.alloc);
     char* extra_infos = nullptr;
     if (extra_info_size_ > 0 && this->extra_infos_ != nullptr) {
@@ -2289,6 +2323,14 @@ HGraph::SearchWithRequest(const SearchRequest& request) const {
         search_result->Pop();
     }
     dataset_results->Statistics(stats.Dump());
+
+    // Generate reasoning report if reasoning context was created
+    if (reasoning_ctx) {
+        reasoning_ctx->MarkResult(result_inner_ids);
+        reasoning_ctx->DiagnoseExpectedTargets();
+        dataset_results->Reasoning(reasoning_ctx->GenerateReport());
+    }
+
     return std::move(dataset_results);
 }
 
