@@ -1353,4 +1353,39 @@ KacsWalk(float* data, uint64_t len) {
     return generic::KacsWalk(data, len);
 #endif
 }
+
+void
+FlipSign(const uint8_t* flip, float* data, uint64_t dim) {
+#if defined(ENABLE_SSE)
+    constexpr uint64_t kFloatsPerChunk = 4;
+    uint64_t i = 0;
+    for (; i + kFloatsPerChunk <= dim; i += kFloatsPerChunk) {
+        uint32_t bit_idx = static_cast<uint32_t>(i);
+        uint8_t flip_bits = 0;
+        flip_bits |= ((flip[bit_idx / 8] >> (bit_idx % 8)) & 1) << 0;
+        flip_bits |= ((flip[(bit_idx + 1) / 8] >> ((bit_idx + 1) % 8)) & 1) << 1;
+        flip_bits |= ((flip[(bit_idx + 2) / 8] >> ((bit_idx + 2) % 8)) & 1) << 2;
+        flip_bits |= ((flip[(bit_idx + 3) / 8] >> ((bit_idx + 3) % 8)) & 1) << 3;
+
+        alignas(16) uint32_t mask[4];
+        mask[0] = (flip_bits & 1) ? 0x80000000 : 0;
+        mask[1] = (flip_bits & 2) ? 0x80000000 : 0;
+        mask[2] = (flip_bits & 4) ? 0x80000000 : 0;
+        mask[3] = (flip_bits & 8) ? 0x80000000 : 0;
+
+        __m128i sign_mask_int = _mm_load_si128(reinterpret_cast<const __m128i*>(mask));
+        __m128 vec = _mm_loadu_ps(&data[i]);
+        vec = _mm_xor_ps(vec, _mm_castsi128_ps(sign_mask_int));
+        _mm_storeu_ps(&data[i], vec);
+    }
+    for (; i < dim; i++) {
+        bool mask = (flip[i / 8] & (1 << (i % 8))) != 0;
+        if (mask) {
+            data[i] = -data[i];
+        }
+    }
+#else
+    return generic::FlipSign(flip, data, dim);
+#endif
+}
 }  // namespace vsag::sse

@@ -463,6 +463,27 @@ TEST_CASE("SIMD test for flip_sign", "[ut][simd]") {
 
             generic::FlipSign(flip, gt_data, dim);
 
+            if (SimdStatus::SupportSSE()) {
+                auto* sse_data = sse_datas.data() + i * dim;
+                sse::FlipSign(flip, sse_data, dim);
+                for (int j = 0; j < dim; j++) {
+                    REQUIRE(std::abs(gt_data[j] - sse_data[j]) < delta);
+                }
+            }
+            if (SimdStatus::SupportAVX()) {
+                auto* avx_data = avx_datas.data() + i * dim;
+                avx::FlipSign(flip, avx_data, dim);
+                for (int j = 0; j < dim; j++) {
+                    REQUIRE(std::abs(gt_data[j] - avx_data[j]) < delta);
+                }
+            }
+            if (SimdStatus::SupportAVX2()) {
+                auto* avx2_data = avx2_datas.data() + i * dim;
+                avx2::FlipSign(flip, avx2_data, dim);
+                for (int j = 0; j < dim; j++) {
+                    REQUIRE(std::abs(gt_data[j] - avx2_data[j]) < delta);
+                }
+            }
             if (SimdStatus::SupportAVX512()) {
                 auto* avx512_data = avx512_datas.data() + i * dim;
                 avx512::FlipSign(flip, avx512_data, dim);
@@ -505,6 +526,15 @@ TEST_CASE("SIMD FlipSign Benchmark", "[ut][simd][!benchmark]") {
     std::vector<uint8_t> flips = fixtures::GenerateVectors<uint8_t>(count, flip_size);
 
     BENCHMARK_SIMD_FLIP_SIGN(generic, FlipSign);
+    if (SimdStatus::SupportSSE()) {
+        BENCHMARK_SIMD_FLIP_SIGN(sse, FlipSign);
+    }
+    if (SimdStatus::SupportAVX()) {
+        BENCHMARK_SIMD_FLIP_SIGN(avx, FlipSign);
+    }
+    if (SimdStatus::SupportAVX2()) {
+        BENCHMARK_SIMD_FLIP_SIGN(avx2, FlipSign);
+    }
     if (SimdStatus::SupportAVX512()) {
         BENCHMARK_SIMD_FLIP_SIGN(avx512, FlipSign);
     }
@@ -549,6 +579,24 @@ TEST_CASE("SIMD FlipSign Correctness with Patterns", "[ut][simd]") {
 
             generic::FlipSign(test.flip_pattern.data(), gt_data.data(), dim);
 
+            if (SimdStatus::SupportSSE()) {
+                sse::FlipSign(test.flip_pattern.data(), sse_data.data(), dim);
+                for (int i = 0; i < dim; i++) {
+                    REQUIRE(std::abs(gt_data[i] - sse_data[i]) < delta);
+                }
+            }
+            if (SimdStatus::SupportAVX()) {
+                avx::FlipSign(test.flip_pattern.data(), avx_data.data(), dim);
+                for (int i = 0; i < dim; i++) {
+                    REQUIRE(std::abs(gt_data[i] - avx_data[i]) < delta);
+                }
+            }
+            if (SimdStatus::SupportAVX2()) {
+                avx2::FlipSign(test.flip_pattern.data(), avx2_data.data(), dim);
+                for (int i = 0; i < dim; i++) {
+                    REQUIRE(std::abs(gt_data[i] - avx2_data[i]) < delta);
+                }
+            }
             if (SimdStatus::SupportAVX512()) {
                 avx512::FlipSign(test.flip_pattern.data(), avx512_data.data(), dim);
                 for (int i = 0; i < dim; i++) {

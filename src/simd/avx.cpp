@@ -1276,4 +1276,37 @@ KacsWalk(float* data, uint64_t len) {
     return sse::FHTRotate(data, len);
 #endif
 }
+
+void
+FlipSign(const uint8_t* flip, float* data, uint64_t dim) {
+#if defined(ENABLE_AVX)
+    constexpr uint64_t kFloatsPerChunk = 8;
+    uint64_t i = 0;
+    for (; i + kFloatsPerChunk <= dim; i += kFloatsPerChunk) {
+        uint32_t bit_idx = static_cast<uint32_t>(i);
+        uint16_t flip_bits = 0;
+        for (int j = 0; j < 8; j++) {
+            flip_bits |= ((flip[(bit_idx + j) / 8] >> ((bit_idx + j) % 8)) & 1) << j;
+        }
+
+        alignas(32) uint32_t mask[8];
+        for (int j = 0; j < 8; j++) {
+            mask[j] = (flip_bits & (1 << j)) ? 0x80000000 : 0;
+        }
+
+        __m256i sign_mask_int = _mm256_load_si256(reinterpret_cast<const __m256i*>(mask));
+        __m256 vec = _mm256_loadu_ps(&data[i]);
+        vec = _mm256_xor_ps(vec, _mm256_castsi256_ps(sign_mask_int));
+        _mm256_storeu_ps(&data[i], vec);
+    }
+    for (; i < dim; i++) {
+        bool mask = (flip[i / 8] & (1 << (i % 8))) != 0;
+        if (mask) {
+            data[i] = -data[i];
+        }
+    }
+#else
+    return sse::FlipSign(flip, data, dim);
+#endif
+}
 }  // namespace vsag::avx
