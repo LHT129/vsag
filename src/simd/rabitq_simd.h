@@ -64,6 +64,10 @@ VecRescale(float* data, uint64_t dim, float val);
 
 void
 KacsWalk(float* data, uint64_t len);
+
+void
+FlipSign(const uint8_t* flip, float* data, uint64_t dim);
+
 }  // namespace avx2
 
 namespace avx {
@@ -98,6 +102,9 @@ RotateOp(float* data, int idx, int dim_, int step);
 
 void
 VecRescale(float* data, uint64_t dim, float val);
+
+void
+FlipSign(const uint8_t* flip, float* data, uint64_t dim);
 
 void
 KacsWalk(float* data, uint64_t len);
