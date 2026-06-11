@@ -42,6 +42,9 @@ public:
     InnerIdType ep{0};
     uint64_t ef{10};
     uint32_t hops_limit{std::numeric_limits<uint32_t>::max()};
+    // DARTH early termination (POC): break base-layer search once this many
+    // distance calculations have been performed. 0 = disabled.
+    uint64_t et_max_dist_calcs{0};
     FilterPtr is_inner_id_allowed{nullptr};
     float skip_ratio{0.8F};
     FilterSearchSkipStrategyType skip_strategy_type{

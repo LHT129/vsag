@@ -81,6 +81,10 @@ public:
 public:
     int64_t ef_search{30};
     uint32_t hops_limit{std::numeric_limits<uint32_t>::max()};
+    // DARTH declarative-recall early termination (POC): cap the number of
+    // base-layer distance calculations. 0 = disabled (plain search). The
+    // threshold is calibrated offline (avg dist-calcs to reach target recall).
+    uint64_t et_max_dist_calcs{0};
     bool use_reorder{false};
     bool use_extra_info_filter{false};
     bool rabitq_one_bit_search{false};

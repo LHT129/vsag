@@ -179,6 +179,7 @@ const char* const HGRAPH_PRECISE_IO_TYPE = "precise_io_type";
 const char* const HGRAPH_PRECISE_FILE_PATH = "precise_file_path";
 const char* const HGRAPH_PARAMETER_EF_RUNTIME = "ef_search";
 const char* const HGRAPH_PARAMETER_HOPS_LIMIT = "hops_limit";
+const char* const HGRAPH_PARAMETER_ET_MAX_DIST_CALCS = "et_max_dist_calcs";
 const char* const HGRAPH_PARAMETER_RABITQ_ONE_BIT_SEARCH = "rabitq_one_bit_search";
 const char* const HGRAPH_PARAMETER_BRUTE_FORCE_THRESHOLD = "brute_force_threshold";
 const char* const HGRAPH_EXTRA_INFO_SIZE = "extra_info_size";

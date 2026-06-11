@@ -151,6 +151,7 @@ HGraph::KnnSearch(const DatasetPtr& query,
         search_param.parallel_search_thread_count = params.parallel_search_thread_count;
         search_param.enable_reorder = params.enable_reorder;
         search_param.enable_rabitq_one_bit_search = params.rabitq_one_bit_search;
+        search_param.et_max_dist_calcs = params.et_max_dist_calcs;
 
         DistanceRecordVector rabitq_lower_bound_candidates(ctx.alloc);
         auto* rabitq_lower_bound_candidates_ptr =
@@ -564,6 +565,7 @@ HGraph::SearchWithRequest(const SearchRequest& request) const {
     } else {
         search_param.hops_limit = params.hops_limit;
     }
+    search_param.et_max_dist_calcs = params.et_max_dist_calcs;
 
     DistanceRecordVector rabitq_lower_bound_candidates(ctx.alloc);
     auto* rabitq_lower_bound_candidates_ptr =

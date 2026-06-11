@@ -205,6 +205,15 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
         if (hops >= inner_search_param.hops_limit) {
             break;
         }
+        // DARTH declarative-recall early termination (POC): stop once the
+        // calibrated distance-calculation budget for the target recall is hit.
+        if (inner_search_param.et_max_dist_calcs != 0 and
+            dist_cmp >= inner_search_param.et_max_dist_calcs) {
+            if (reasoning != nullptr) {
+                reasoning->SetTermination(ReasoningContext::kTerminationEarlyRecall);
+            }
+            break;
+        }
         auto current_node_pair = candidate_set->Top();
 
         if constexpr (mode == InnerSearchMode::KNN_SEARCH) {
@@ -387,6 +396,15 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
         if (hops >= inner_search_param.hops_limit) {
             if (reasoning != nullptr) {
                 reasoning->SetTermination(ReasoningContext::kTerminationHopsLimitReached);
+            }
+            break;
+        }
+        // DARTH declarative-recall early termination (POC): stop once the
+        // calibrated distance-calculation budget for the target recall is hit.
+        if (inner_search_param.et_max_dist_calcs != 0 and
+            dist_cmp >= inner_search_param.et_max_dist_calcs) {
+            if (reasoning != nullptr) {
+                reasoning->SetTermination(ReasoningContext::kTerminationEarlyRecall);
             }
             break;
         }
