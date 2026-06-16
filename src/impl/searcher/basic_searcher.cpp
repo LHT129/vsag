@@ -21,6 +21,7 @@
 #include <limits>
 
 #include "algorithm/inner_index_interface.h"
+#include "darth.h"
 #include "datacell/flatten_interface.h"
 #include "impl/heap/standard_heap.h"
 #include "impl/reasoning/search_reasoning.h"
@@ -408,6 +409,15 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
             }
             break;
         }
+        // DARTH scope B: learned recall predictor at adaptive intervals.
+        if (darth::session().mode != darth::Mode::kOff and
+            darth::checkpoint(
+                dist_cmp, hops, top_candidates.get(), inner_search_param.topk, label_table.get())) {
+            if (reasoning != nullptr) {
+                reasoning->SetTermination(ReasoningContext::kTerminationEarlyRecall);
+            }
+            break;
+        }
         if (reasoning != nullptr) {
             reasoning->AddSearchHop();
         }
@@ -488,6 +498,13 @@ BasicSearcher::search_impl(const GraphInterfacePtr& graph,
                 //                flatten->Prefetch(candidate_set->Top().second);
                 if (check_func(cur_id)) {
                     top_candidates->Push(dist, cur_id);
+                    if (darth::session().mode != darth::Mode::kOff) {
+                        auto& ds = darth::session();
+                        if (ds.first_nn < 0) {
+                            ds.first_nn = dist;
+                        }
+                        ds.n_inserts++;
+                    }
                 } else if (reasoning != nullptr) {
                     reasoning->RecordFilterReject(cur_id);
                 }
