@@ -50,7 +50,8 @@ UringIOContext::UringIOContext() {
             err_name = "EAGAIN";
         else
             err_name = "errno_" + std::to_string(err);
-        throw VsagException(
+        throw UringSetupException(
+            err,
             ErrorType::INTERNAL_ERROR,
             fmt::format("io_uring_queue_init failed: {} ({})", strerror(err), err_name));
     }

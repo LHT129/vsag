@@ -17,7 +17,7 @@
 #include "flatten_datacell.h"
 #include "index_common_param.h"
 #include "inner_string_params.h"
-#include "io/io_headers.h"
+#include "io/common/io_type_dispatch.h"
 #include "multi_vector_datacell.h"
 #include "quantization/int8_quantizer.h"
 #include "quantization/quantizer_adapter.h"
@@ -242,29 +242,14 @@ make_instance(const FlattenInterfaceParamPtr& param, const IndexCommonParam& com
 FlattenInterfacePtr
 FlattenInterface::MakeInstance(const FlattenInterfaceParamPtr& param,
                                const IndexCommonParam& common_param) {
-    auto io_type_name = param->io_parameter->GetTypeName();
-    if (io_type_name == IO_TYPE_VALUE_BLOCK_MEMORY_IO) {
-        return make_instance<MemoryBlockIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_MEMORY_IO) {
-        return make_instance<MemoryIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_BUFFER_IO) {
-        return make_instance<BufferIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_ASYNC_IO) {
-        return make_instance<AsyncIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_URING_IO) {
-        return make_instance<UringIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_MMAP_IO) {
-        return make_instance<MMapIO>(param, common_param);
-    }
-    if (io_type_name == IO_TYPE_VALUE_READER_IO) {
-        return make_instance<ReaderIO>(param, common_param);
-    }
-    return nullptr;
+    return VisitIOKind(param->io_parameter->Kind(), [&](auto tag) -> FlattenInterfacePtr {
+        using IO = typename decltype(tag)::Type;
+        if constexpr (std::is_void_v<IO>) {
+            return nullptr;
+        } else {
+            return make_instance<IO>(param, common_param);
+        }
+    });
 }
 
 }  // namespace vsag

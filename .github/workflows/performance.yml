@@ -28,10 +28,29 @@ jobs:
         # Performance benchmarks already run against OpenBLAS (the default
         # backend). Use the pre-installed system OpenBLAS so the BLAS build
         # itself doesn't eat into the daily perf window.
-        run: EXTRA_DEFINED="-DUSE_SYSTEM_OPENBLAS=ON" make release-perf VSAG_ENABLE_TOOLS=ON
+        run: >-
+          EXTRA_DEFINED="-DUSE_SYSTEM_OPENBLAS=ON -DENABLE_IO_BENCHMARKS=ON"
+          make release-perf VSAG_ENABLE_TOOLS=ON
       - name: Run Perf - Recall 90%, 95%, 99%
         run:  |
           ./build-release-perf/tools/eval/eval_performance .github/perf-mini.yml
+      - name: Collect IO Performance Samples
+        run: |
+          mkdir -p io-performance-results
+          ./build-release-perf/benchs/io/io_micro_benchmark 11 \
+            > io-performance-results/micro.csv
+          ./build-release-perf/benchs/io/io_backend_profile_benchmark 11 all \
+            > io-performance-results/backend-profiles.csv
+          ./build-release-perf/benchs/io/io_storage_profile_benchmark \
+            /tmp/vsag-io-storage-profile.data 11 noncontinuous \
+            > io-performance-results/noncontinuous.csv
+      - name: Upload IO Performance Samples
+        uses: actions/upload-artifact@v4
+        with:
+          name: io-performance-${{ github.run_id }}
+          path: io-performance-results/*.csv
+          if-no-files-found: error
+          retention-days: 30
       - name: Send Report
         run:  |
           python3 scripts/perf_reports/dingding.py /tmp/github-perf.json || echo "send report to dingding failed"

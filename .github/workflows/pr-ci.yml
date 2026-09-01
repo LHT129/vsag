@@ -297,8 +297,21 @@ jobs:
           echo leak:libgomp.so >> omp.supp
           export LSAN_OPTIONS=suppressions=omp.supp
           chmod +x ./build/tests/unittests ./build/tools/eval/eval_dataset_test \
-            ./build/tools/autotune/autotune_test
+            ./build/tools/autotune/autotune_test ./build/tests/io_syscall_count_test
+          if [[ -f ./build/tests/io_async_submission_test ]]; then
+            chmod +x ./build/tests/io_async_submission_test
+          fi
+          if [[ -f ./build/tests/io_uring_submission_test ]]; then
+            chmod +x ./build/tests/io_uring_submission_test
+          fi
           ./scripts/testing/test_parallel_by_name.sh unittests
+          ./build/tests/io_syscall_count_test
+          if [[ -x ./build/tests/io_async_submission_test ]]; then
+            ./build/tests/io_async_submission_test
+          fi
+          if [[ -x ./build/tests/io_uring_submission_test ]]; then
+            ./build/tests/io_uring_submission_test
+          fi
           ./build/tools/eval/eval_dataset_test -d yes
           ./build/tools/autotune/autotune_test -d yes
       - name: Upload Log

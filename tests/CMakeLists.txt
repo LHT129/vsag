@@ -61,6 +61,36 @@ endif()
 
 add_dependencies (unittests Catch2 vsag)
 
+# These Linux-only executables use linker wrapping to assert syscall and asynchronous submission
+# behavior without changing the link options of the main unit-test binary.
+if (UNIX AND NOT APPLE)
+        add_executable (io_syscall_count_test io_probe/io_syscall_count_probe.cpp)
+        target_link_libraries (io_syscall_count_test PRIVATE vsag_static)
+        target_link_options (io_syscall_count_test PRIVATE
+                "-Wl,--wrap=pread64"
+                "-Wl,--wrap=pwrite64")
+
+        if (HAVE_LIBAIO)
+                add_executable (io_async_submission_test io_probe/io_async_aio_probe.cpp)
+                target_link_libraries (io_async_submission_test PRIVATE vsag_static)
+                target_link_options (io_async_submission_test PRIVATE
+                        "-Wl,--wrap=io_setup"
+                        "-Wl,--wrap=io_destroy"
+                        "-Wl,--wrap=io_submit"
+                        "-Wl,--wrap=io_getevents")
+        endif ()
+
+        if (HAVE_LIBURING)
+                add_executable (io_uring_submission_test io_probe/io_uring_aio_probe.cpp)
+                target_link_libraries (io_uring_submission_test PRIVATE vsag_static)
+                target_link_options (io_uring_submission_test PRIVATE
+                        "-Wl,--wrap=io_uring_queue_init"
+                        "-Wl,--wrap=io_uring_queue_exit"
+                        "-Wl,--wrap=io_uring_submit"
+                        "-Wl,--wrap=__io_uring_get_cqe")
+        endif ()
+endif ()
+
 add_executable (eval_monitor_test
         ${PROJECT_SOURCE_DIR}/tools/eval/monitor/latency_monitor_test.cpp
         ${PROJECT_SOURCE_DIR}/tools/eval/monitor/latency_monitor.cpp
