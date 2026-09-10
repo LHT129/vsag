@@ -396,6 +396,16 @@ public:
             query, k, parameters, filter, nullptr, iter_ctx, is_last_filter));
     }
 
+    tl::expected<std::unique_ptr<SearchSession>, Error>
+    OpenSearchSession(const DatasetPtr& query,
+                      int64_t k_per_call,
+                      const std::string& parameters,
+                      const FilterPtr& filter = nullptr,
+                      Allocator* allocator = nullptr) const override {
+        SAFE_CALL(return this->inner_index_->OpenSearchSession(
+            query, k_per_call, parameters, filter, allocator, this->inner_index_));
+    }
+
     tl::expected<void, Error>
     Merge(const std::vector<MergeUnit>& merge_units) override {
         CHECK_IMMUTABLE_INDEX("merge");
