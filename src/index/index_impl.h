@@ -402,8 +402,18 @@ public:
                       const std::string& parameters,
                       const FilterPtr& filter = nullptr,
                       Allocator* allocator = nullptr) const override {
-        SAFE_CALL(return this->inner_index_->OpenSearchSession(
-            query, k_per_call, parameters, filter, allocator, this->inner_index_));
+        // InnerIndexInterface stores a raw allocator; retain common resources too.
+        // Destruction order releases the backend before its allocator/thread pool.
+        struct SessionOwner {
+            IndexCommonParam resources;
+            InnerIndexPtr backend;
+        };
+        SAFE_CALL(
+            auto lifetime = std::make_shared<SessionOwner>(
+                SessionOwner{this->common_param_, this->inner_index_});
+            std::shared_ptr<const InnerIndexInterface> owner(lifetime, this->inner_index_.get());
+            return this->inner_index_->OpenSearchSession(
+                query, k_per_call, parameters, filter, allocator, std::move(owner)));
     }
 
     tl::expected<void, Error>
