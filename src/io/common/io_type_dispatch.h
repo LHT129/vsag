@@ -51,6 +51,9 @@ VisitIOKind(IOKind kind, Visitor&& visitor) {
             return std::forward<Visitor>(visitor)(IOTypeTag<UringIO>{});
         case IOKind::READER:
             return std::forward<Visitor>(visitor)(IOTypeTag<ReaderIO>{});
+        // Intentionally excluded: external storage is constructed by the precise FP32 factory
+        // path only, not by generic visitors that instantiate all graph/quantizer combinations.
+        case IOKind::EXTERNAL_STORAGE:
         case IOKind::UNKNOWN:
             return std::forward<Visitor>(visitor)(IOTypeTag<void>{});
     }
