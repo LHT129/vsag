@@ -22,6 +22,7 @@
 #include "dataset_impl.h"
 #include "hgraph.h"  // IWYU pragma: keep
 #include "impl/filter/iterator_filter.h"
+#include "impl/graph_core/visited_list_lease.h"
 #include "impl/heap/standard_heap.h"
 #include "impl/query_computer_pool.h"
 #include "impl/reasoning/search_reasoning.h"
@@ -318,14 +319,12 @@ HGraph::search_one_graph(const void* query,
     if (fused_search_finalized != nullptr) {
         *fused_search_finalized = false;
     }
-    bool new_visited_list = vt == nullptr;
-    VisitedListPtr visited_list;
-    if (new_visited_list) {
-        visited_list = this->pool_->TakeOne();
-    } else {
-        visited_list = vt;
-        visited_list->Reset();
-    }
+    // Take a list when the caller did not supply one; otherwise borrow theirs and
+    // let the lease reset it. Either way the lease guarantees the list is returned
+    // even if the searcher throws, which a hand-written pair cannot do.
+    VisitedListLease lease{vt == nullptr ? VisitedListLease(this->pool_.get())
+                                         : VisitedListLease(vt)};
+    const auto& visited_list = lease.Get();
     DistHeapPtr result = nullptr;
     if (rabitq_candidates != nullptr) {
         rabitq_candidates->Reset();
@@ -374,9 +373,6 @@ HGraph::search_one_graph(const void* query,
             ctx,
             rabitq_candidates == nullptr ? nullptr : &rabitq_candidates->generic);
     }
-    if (new_visited_list) {
-        this->pool_->ReturnOne(visited_list);
-    }
     return result;
 }
 
@@ -389,7 +385,8 @@ HGraph::search_one_graph(const void* query,
                          IteratorFilterContext* iter_ctx,
                          QueryContext* ctx,
                          RaBitQSearchCandidateBuffers* rabitq_candidates) const {
-    auto visited_list = this->pool_->TakeOne();
+    VisitedListLease lease(this->pool_.get());
+    const auto& visited_list = lease.Get();
     if (rabitq_candidates != nullptr) {
         rabitq_candidates->Reset();
     }
@@ -433,7 +430,6 @@ HGraph::search_one_graph(const void* query,
             ctx,
             rabitq_candidates == nullptr ? nullptr : &rabitq_candidates->generic);
     }
-    this->pool_->ReturnOne(visited_list);
     return result;
 }
 
