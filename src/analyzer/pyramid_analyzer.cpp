@@ -20,6 +20,7 @@
 #include <random>
 
 #include "dataset_impl.h"
+#include "impl/graph_core/visited_list_lease.h"
 #include "impl/heap/standard_heap.h"
 #include "impl/logger/logger.h"
 #include "impl/searcher/basic_searcher.h"
@@ -1101,7 +1102,9 @@ PyramidAnalyzer::search_single_node(const IndexNode* node,
         inner_param.ef = ef_search;
         inner_param.search_mode = KNN_SEARCH;
 
-        auto vl = pyramid_->pool_->TakeOne();
+        // Lease the visited list: a throwing search must not skip the return.
+        VisitedListLease vl_lease(pyramid_->pool_.get());
+        const auto& vl = vl_lease.Get();
 
         SearchStatistics stats;
         QueryContext ctx{.stats = &stats};
@@ -1118,8 +1121,6 @@ PyramidAnalyzer::search_single_node(const IndexNode* node,
             logger::error("[search_single_node] search_node threw exception: {}", e.what());
             result = std::make_shared<StandardHeap<true, false>>(allocator_, -1);
         }
-
-        pyramid_->pool_->ReturnOne(vl);
 
         return result;
     }
