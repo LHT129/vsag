@@ -1755,7 +1755,6 @@ Pyramid::read_streaming_body(StreamReader& reader, const MetadataPtr& metadata) 
 
     label_table_->TrimUnusedSlots(base_codes_->TotalCount());
     resize(max_capacity);
-    this->current_memory_usage_ = static_cast<int64_t>(this->CalSerializeSize());
 }
 
 void
@@ -1825,7 +1824,6 @@ Pyramid::Deserialize(StreamReader& reader) {
     }
 
     resize(max_capacity);
-    this->current_memory_usage_ = this->CalSerializeSize();
 }
 
 InnerIndexPtr
@@ -1850,7 +1848,6 @@ Pyramid::ExportModel(const IndexCommonParam& param) const {
         }
         this->raw_vector_->ExportModel(index->raw_vector_);
     }
-    index->current_memory_usage_ = index->CalSerializeSize();
     return index;
 }
 
