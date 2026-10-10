@@ -328,7 +328,12 @@ public:
     int
     get_random_level() {
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        double r = -log(distribution(level_generator_)) * mult_;
+        // The distribution is half open, so it may in principle return exactly 0.0.
+        // log(0) is -inf and casting -inf to int is undefined behaviour; clamping the
+        // sample away from zero keeps the result well defined at negligible cost.
+        const auto sample =
+            std::max(distribution(level_generator_), std::numeric_limits<double>::min());
+        double r = -log(sample) * mult_;
         return static_cast<int>(r);
     }
 

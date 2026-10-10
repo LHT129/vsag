@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include "hgraph.h"
+#include "impl/allocator/safe_allocator.h"
 #include "index_common_param.h"
 #include "inner_string_params.h"
 #include "parameter_test.h"
@@ -238,6 +239,40 @@ TEST_CASE("HGraph maps support_duplicate to graph parameter", "[ut][HGraphParame
     REQUIRE(typed_param->deduplicate_storage);
     REQUIRE(typed_param->duplicate_distance_threshold == 0.25F);
     REQUIRE(typed_param->bottom_graph_param->support_duplicate_);
+}
+
+TEST_CASE("HGraph samples well defined levels", "[ut][HGraphParameter]") {
+    // get_random_level draws from a half open distribution and feeds the sample to
+    // log before casting to int. A sample of exactly 0.0 made log return -inf, and
+    // casting -inf to int is undefined behaviour (UBSan: "inf is outside the range
+    // of representable values of type 'int'"). The clamp keeps every result inside
+    // the range a caller can actually index with.
+    // Constructing the index dereferences an allocator and a configured graph
+    // parameter, so both the common param and the mapped json must be complete;
+    // a bare {"max_degree": ...} json leaves the bottom graph null.
+    vsag::IndexCommonParam common_param;
+    common_param.dim_ = 128;
+    common_param.metric_ = vsag::MetricType::METRIC_TYPE_L2SQR;
+    common_param.data_type_ = vsag::DataTypes::DATA_TYPE_FLOAT;
+    common_param.allocator_ = vsag::SafeAllocator::FactoryDefaultAllocator();
+
+    auto external = vsag::JsonType::Parse(R"({
+        "base_quantization_type": "fp32",
+        "max_degree": 32,
+        "ef_construction": 100
+    })");
+    auto hgraph_param = vsag::HGraph::CheckAndMappingExternalParam(external, common_param);
+    auto param = std::dynamic_pointer_cast<vsag::HGraphParameter>(hgraph_param);
+    REQUIRE(param != nullptr);
+
+    vsag::HGraph index(param, common_param);
+    for (int i = 0; i < 20000; ++i) {
+        const auto level = index.get_random_level();
+        // A level below zero would mean -inf leaked through the cast, and an absurdly
+        // large one would mean the sample reached the clamp and dominated the graph.
+        REQUIRE(level >= 0);
+        REQUIRE(level < 1000);
+    }
 }
 
 TEST_CASE("HGraph maps conjugate graph parameters", "[ut][HGraphParameter]") {
