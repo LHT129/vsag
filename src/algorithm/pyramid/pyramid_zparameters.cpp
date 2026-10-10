@@ -267,6 +267,11 @@ PyramidParameters::FromJson(const JsonType& json) {
         GraphStorageTypes::GRAPH_STORAGE_TYPE_SPARSE, graph_json);
     this->root_graph_storage_type = parse_root_graph_storage_type(graph_json);
     this->alpha = graph_json[ALPHA_KEY].GetFloat();
+    // The hierarchies branch already rejects a non-positive alpha; the top level entry
+    // point used to accept it, so the same value was valid through one path and
+    // rejected through the other, and a small or negative alpha silently degraded
+    // build quality instead of failing.
+    CHECK_ARGUMENT(this->alpha > 0.0F, "alpha must be positive");
     this->max_degree = graph_json[GRAPH_PARAM_MAX_DEGREE_KEY].GetInt();
 
     this->graph_type = graph_json[GRAPH_TYPE_KEY].GetString();

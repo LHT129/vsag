@@ -943,6 +943,50 @@ TEST_CASE("Pyramid rejects a zero ef_construction for every graph type",
     }
 }
 
+TEST_CASE("Pyramid rejects a non positive alpha on both entry points", "[ut][PyramidParameters]") {
+    // alpha was validated only when it arrived through a hierarchy object, so the same
+    // value was rejected via "hierarchies" and accepted via the top level index_param.
+    // A small or negative alpha degrades pruning, so accepting it silently produced an
+    // index that built and searched but returned mostly wrong neighbours.
+    vsag::IndexCommonParam common_param;
+    common_param.dim_ = 128;
+    common_param.data_type_ = vsag::DataTypes::DATA_TYPE_FLOAT;
+
+    auto top_level = [](const char* alpha) {
+        return vsag::JsonType::Parse(fmt::format(
+            R"({{
+                "base_quantization_type": "fp32",
+                "graph_type": "odescent",
+                "max_degree": 32,
+                "ef_construction": 100,
+                "alpha": {}
+            }})",
+            alpha));
+    };
+    auto via_hierarchy = [](const char* alpha) {
+        return vsag::JsonType::Parse(fmt::format(
+            R"({{
+                "base_quantization_type": "fp32",
+                "graph_type": "odescent",
+                "max_degree": 32,
+                "ef_construction": 100,
+                "hierarchies": [{{"name": "h", "alpha": {}}}]
+            }})",
+            alpha));
+    };
+
+    for (const auto* alpha : {"-1.0", "0.0"}) {
+        REQUIRE_THROWS(vsag::Pyramid::CheckAndMappingExternalParam(top_level(alpha), common_param));
+        REQUIRE_THROWS(
+            vsag::Pyramid::CheckAndMappingExternalParam(via_hierarchy(alpha), common_param));
+    }
+    // Positive values and the default stay valid.
+    for (const auto* alpha : {"0.5", "1.2", "2.0"}) {
+        REQUIRE_NOTHROW(
+            vsag::Pyramid::CheckAndMappingExternalParam(top_level(alpha), common_param));
+    }
+}
+
 TEST_CASE("Pyramid validates explicit factor", "[ut][PyramidParameters]") {
     auto absent = vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":20}})");
     REQUIRE(absent.topk_factor == 0.0F);
