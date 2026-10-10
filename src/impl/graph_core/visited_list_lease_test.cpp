@@ -166,7 +166,12 @@ TEST_CASE("A never-returned list costs one construction per iteration", "[ut][Vi
             held.push_back(pool.TakeOne());
         }
     });
-    REQUIRE(cost >= static_cast<uint64_t>(kRounds));
+    // The pool is seeded with exactly one list, so a thread that hashes to the
+    // seeded sub-pool reuses it on its first take and constructs only kRounds - 1
+    // times. Allowing that single reuse keeps the guard honest: it still fails if
+    // construction ever stops being per-iteration, which is what makes the growth
+    // assertions above meaningful.
+    REQUIRE(cost >= static_cast<uint64_t>(kRounds) - 1);
 
     for (auto& list : held) {
         pool.ReturnOne(list);

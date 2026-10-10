@@ -1304,6 +1304,48 @@ Pyramid::GetMemoryUsageDetail() const {
     return memory_usage;
 }
 
+uint64_t
+Pyramid::EstimateMemory(uint64_t num_elements) const {
+    (void)num_elements;
+    throw VsagException(ErrorType::UNSUPPORTED_INDEX_OPERATION,
+                        "Pyramid cannot estimate memory before Build: the footprint depends on "
+                        "the path distribution of the data and on randomly drawn routing levels. "
+                        "Use GetMemoryUsage() after Build instead");
+}
+
+std::pair<int64_t, int64_t>
+Pyramid::GetMinAndMaxId() const {
+    int64_t min_id = INT64_MAX;
+    int64_t max_id = INT64_MIN;
+
+    std::shared_lock label_lock(this->label_lookup_mutex_);
+    if (this->cur_element_count_ == 0) {
+        throw VsagException(ErrorType::INTERNAL_ERROR, "Label map size is zero");
+    }
+
+    // Scan the label table directly instead of walking the hierarchy: a label can
+    // be stored under several paths (one adjacency copy per path node), so a
+    // per-path traversal would report the same label repeatedly. Removed labels
+    // are skipped so the range only covers rows that can still be returned.
+    const auto total = static_cast<InnerIdType>(this->label_table_->GetTotalCount());
+    for (InnerIdType inner_id = 0; inner_id < total; ++inner_id) {
+        if (this->label_table_->IsRemoved(inner_id)) {
+            continue;
+        }
+        const auto label = this->label_table_->GetLabelById(inner_id);
+        if (label == -1) {
+            continue;
+        }
+        max_id = std::max(label, max_id);
+        min_id = std::min(label, min_id);
+    }
+
+    // Every row was removed, so no valid range exists.
+    if (min_id == INT64_MAX) {
+        throw VsagException(ErrorType::INTERNAL_ERROR, "Label map size is zero");
+    }
+    return {min_id, max_id};
+}
 uint32_t
 Pyramid::Remove(const std::vector<int64_t>& ids, RemoveMode mode) {
     if (mode != RemoveMode::MARK_REMOVE) {

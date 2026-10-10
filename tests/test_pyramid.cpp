@@ -3881,6 +3881,111 @@ TEST_CASE("Pyramid duplicate cache preserves multipath memberships",
     fixture.Check(roundtrip);
 }
 
+TEST_CASE("Pyramid reports the label range across paths and removals",
+          "[ft][pyramid][min_max_id]") {
+    // A label range is a property of the label table, not of the tree, because one
+    // label can hold an adjacency copy under several path nodes. Scanning per path
+    // would visit the same label repeatedly and, worse, would miss nothing but
+    // could report a range that ignores rows outside the walked path.
+    using namespace fixtures;
+    constexpr int64_t dim = 4;
+    PyramidParam build_param;
+    build_param.base_quantization_type = "fp32";
+    auto created = vsag::Factory::CreateIndex(
+        "pyramid", PyramidTestIndex::GeneratePyramidBuildParametersString("l2", dim, build_param));
+    REQUIRE(created.has_value());
+    auto index = created.value();
+
+    const std::vector<int64_t> ids{50, -7, 300, 11};
+    const std::vector<std::string> paths{"root/a", "root/a", "root/b", "root/a/leaf"};
+    std::vector<std::array<float, dim>> vectors;
+    for (size_t i = 0; i < ids.size(); ++i) {
+        std::array<float, dim> vector{};
+        vector[i % dim] = 1.0F;
+        vectors.push_back(vector);
+    }
+
+    auto base = MakeDenseDataset(vectors, ids, paths);
+    REQUIRE(index->Build(base).has_value());
+
+    auto range = index->GetMinAndMaxId();
+    REQUIRE(range.has_value());
+    REQUIRE(range.value().first == -7);
+    REQUIRE(range.value().second == 300);
+
+    // Removing the current maximum must shrink the upper bound, which also proves
+    // the scan consults removal state rather than re-reading ids blindly.
+    auto remove_result = index->Remove(std::vector<int64_t>{300}, vsag::RemoveMode::MARK_REMOVE);
+    REQUIRE(remove_result.has_value());
+
+    range = index->GetMinAndMaxId();
+    REQUIRE(range.has_value());
+    REQUIRE(range.value().first == -7);
+    REQUIRE(range.value().second == 50);
+
+    // Exactly one label is left, so both ends collapse onto it.
+    REQUIRE(index->Remove(std::vector<int64_t>{50, 11}, vsag::RemoveMode::MARK_REMOVE).has_value());
+    range = index->GetMinAndMaxId();
+    REQUIRE(range.has_value());
+    REQUIRE(range.value().first == -7);
+    REQUIRE(range.value().second == -7);
+}
+
+TEST_CASE("Pyramid reports no label range once every row is removed", "[ft][pyramid][min_max_id]") {
+    using namespace fixtures;
+    constexpr int64_t dim = 4;
+    PyramidParam build_param;
+    build_param.base_quantization_type = "fp32";
+    auto created = vsag::Factory::CreateIndex(
+        "pyramid", PyramidTestIndex::GeneratePyramidBuildParametersString("l2", dim, build_param));
+    REQUIRE(created.has_value());
+    auto index = created.value();
+
+    std::vector<std::array<float, dim>> vectors{
+        {{{1.0F, 0.0F, 0.0F, 0.0F}}, {{0.0F, 1.0F, 0.0F, 0.0F}}}};
+    auto base = MakeDenseDataset(vectors, {4, 5}, {"root/a", "root/a"});
+    REQUIRE(index->Build(base).has_value());
+    REQUIRE(index->Remove(std::vector<int64_t>{4, 5}, vsag::RemoveMode::MARK_REMOVE).has_value());
+
+    // Reporting a range here would hand callers bounds that match no live row, so
+    // the call must fail instead of returning a stale pair.
+    REQUIRE_FALSE(index->GetMinAndMaxId().has_value());
+}
+
+TEST_CASE("Pyramid reports no label range on an empty index", "[ft][pyramid][min_max_id]") {
+    using namespace fixtures;
+    constexpr int64_t dim = 4;
+    PyramidParam build_param;
+    build_param.base_quantization_type = "fp32";
+    auto created = vsag::Factory::CreateIndex(
+        "pyramid", PyramidTestIndex::GeneratePyramidBuildParametersString("l2", dim, build_param));
+    REQUIRE(created.has_value());
+    auto index = created.value();
+    REQUIRE_FALSE(index->GetMinAndMaxId().has_value());
+}
+
+TEST_CASE("Pyramid rejects memory estimation with an actionable message",
+          "[ft][pyramid][min_max_id]") {
+    // Pyramid deliberately does not implement EstimateMemory: the per-node row count
+    // depends on the path distribution of the data (unknown before Build) and each
+    // node's routing level is drawn at random. Pinning the failure here keeps the
+    // decision visible, so a future change cannot silently start returning a number
+    // that callers would trust for capacity planning.
+    using namespace fixtures;
+    constexpr int64_t dim = 4;
+    PyramidParam build_param;
+    build_param.base_quantization_type = "fp32";
+    auto created = vsag::Factory::CreateIndex(
+        "pyramid", PyramidTestIndex::GeneratePyramidBuildParametersString("l2", dim, build_param));
+    REQUIRE(created.has_value());
+    auto index = created.value();
+
+    REQUIRE_THROWS(index->EstimateMemory(1000));
+
+    // GetMemoryUsage stays the supported way to obtain a real footprint.
+    REQUIRE(index->GetMemoryUsage() > 0);
+}
+
 TEST_CASE("Pyramid dense native distance contract", "[distance_contract]") {
     using namespace fixtures;
     for (const auto* quantizer : {"fp32", "sq8"}) {

@@ -193,6 +193,18 @@ public:
     int64_t
     GetNumberRemoved() const override;
 
+    std::pair<int64_t, int64_t>
+    GetMinAndMaxId() const override;
+
+    /// Pyramid is a path-partitioned tree, so the number of rows stored per node --
+    /// and therefore the memory needed -- depends on the path distribution of the
+    /// data, which is unknown before Build. The routing level of each node is also
+    /// drawn from a random distribution, making the footprint non-deterministic for
+    /// a fixed element count. Callers that need real numbers should use
+    /// GetMemoryUsage() after Build instead.
+    uint64_t
+    EstimateMemory(uint64_t num_elements) const override;
+
     [[nodiscard]] uint64_t
     GetMemoryUsage() const override;
 
