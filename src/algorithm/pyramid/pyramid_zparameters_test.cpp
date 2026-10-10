@@ -987,6 +987,45 @@ TEST_CASE("Pyramid rejects a non positive alpha on both entry points", "[ut][Pyr
     }
 }
 
+TEST_CASE("Pyramid bounds index_min_size on both entry points", "[ut][PyramidParameters]") {
+    // index_min_size is a uint32_t. The top level entry point read it without any
+    // range check, so -1 wrapped to 4294967295 and no node ever reached the threshold
+    // that promotes it from flat scan to graph, leaving a pyramid that built in
+    // milliseconds but searched several times slower than a graph backed one.
+    vsag::IndexCommonParam common_param;
+    common_param.dim_ = 128;
+    common_param.data_type_ = vsag::DataTypes::DATA_TYPE_FLOAT;
+
+    auto make = [](const char* value, bool via_hierarchy) {
+        const auto inner = fmt::format(R"("index_min_size": {})", value);
+        const auto body =
+            via_hierarchy ? fmt::format(R"("hierarchies": [{{"name": "h", {}}}])", inner) : inner;
+        return vsag::JsonType::Parse(fmt::format(
+            R"({{
+                "base_quantization_type": "fp32",
+                "graph_type": "odescent",
+                "max_degree": 32,
+                "ef_construction": 100,
+                {}
+            }})",
+            body));
+    };
+
+    for (const bool via_hierarchy : {false, true}) {
+        // Negative values wrap in uint32_t, so both entry points must reject them.
+        REQUIRE_THROWS(
+            vsag::Pyramid::CheckAndMappingExternalParam(make("-1", via_hierarchy), common_param));
+        // Above uint32_t the value cannot be represented either.
+        REQUIRE_THROWS(vsag::Pyramid::CheckAndMappingExternalParam(
+            make("4294967296", via_hierarchy), common_param));
+        // The boundary and ordinary values stay valid.
+        REQUIRE_NOTHROW(vsag::Pyramid::CheckAndMappingExternalParam(
+            make("4294967295", via_hierarchy), common_param));
+        REQUIRE_NOTHROW(
+            vsag::Pyramid::CheckAndMappingExternalParam(make("100", via_hierarchy), common_param));
+    }
+}
+
 TEST_CASE("Pyramid validates explicit factor", "[ut][PyramidParameters]") {
     auto absent = vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":20}})");
     REQUIRE(absent.topk_factor == 0.0F);

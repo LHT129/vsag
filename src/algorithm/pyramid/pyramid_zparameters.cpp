@@ -318,7 +318,15 @@ PyramidParameters::FromJson(const JsonType& json) {
     }
 
     if (json.Contains(INDEX_MIN_SIZE)) {
-        this->index_min_size = json[INDEX_MIN_SIZE].GetInt();
+        const auto index_min_size_value = json[INDEX_MIN_SIZE].GetInt();
+        // Mirror the hierarchy branch: the field is uint32_t, so a negative value used
+        // to wrap to a huge threshold and stop every node from ever building a graph.
+        CHECK_ARGUMENT(
+            index_min_size_value >= 0,
+            fmt::format("index_min_size({}) must be non-negative", index_min_size_value));
+        CHECK_ARGUMENT(index_min_size_value <= std::numeric_limits<uint32_t>::max(),
+                       fmt::format("index_min_size({}) exceeds uint32_t", index_min_size_value));
+        this->index_min_size = static_cast<uint32_t>(index_min_size_value);
     }
     if (json.Contains(PYRAMID_ROOT_GRAPH_TYPE)) {
         CHECK_ARGUMENT(json[PYRAMID_ROOT_GRAPH_TYPE].IsString(),
