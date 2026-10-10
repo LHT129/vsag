@@ -282,7 +282,12 @@ PyramidParameters::FromJson(const JsonType& json) {
             this->pipnn_param.FromJson(graph_json);
             this->pipnn_param.alpha = this->alpha;
         }
-    } else if (json.Contains(EF_CONSTRUCTION_KEY)) {
+    }
+    // Validate ef_construction for every graph type. This used to live on the odescent
+    // branch's else, so a pyramid built with graph_type odescent or pipnn accepted
+    // ef_construction 0 while nsw rejected it. The value feeds the construction search
+    // width, and every other index in the tree rejects zero here.
+    if (json.Contains(EF_CONSTRUCTION_KEY)) {
         this->ef_construction = json[EF_CONSTRUCTION_KEY].GetUint64();
         CHECK_ARGUMENT(this->ef_construction > 0, "ef_construction must be positive");
     }

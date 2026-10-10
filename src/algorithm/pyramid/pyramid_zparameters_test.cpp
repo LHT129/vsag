@@ -911,6 +911,38 @@ TEST_CASE("Pyramid PiPNN rejects non-dense input representations", "[ut][pipnn][
     REQUIRE_THROWS(std::make_shared<vsag::Pyramid>(mapped, common_param));
 }
 
+TEST_CASE("Pyramid rejects a zero ef_construction for every graph type",
+          "[ut][PyramidParameters]") {
+    // ef_construction used to be validated only on the nsw branch, because the check
+    // sat on the else of the odescent condition. A pyramid built with graph_type
+    // odescent or pipnn therefore accepted ef_construction 0 even though the value is
+    // the construction search width and every other index rejects zero.
+    vsag::IndexCommonParam common_param;
+    common_param.dim_ = 128;
+    common_param.data_type_ = vsag::DataTypes::DATA_TYPE_FLOAT;
+
+    auto make = [](const char* graph_type, const char* ef_construction) {
+        return vsag::JsonType::Parse(fmt::format(
+            R"({{
+                "base_quantization_type": "fp32",
+                "graph_type": "{}",
+                "max_degree": 32,
+                "ef_construction": {}
+            }})",
+            graph_type,
+            ef_construction));
+    };
+
+    for (const auto* graph_type : {"nsw", "odescent", "pipnn"}) {
+        // Zero is rejected for every graph type, not only nsw.
+        REQUIRE_THROWS(
+            vsag::Pyramid::CheckAndMappingExternalParam(make(graph_type, "0"), common_param));
+        // A positive value is still accepted, so the check does not reject valid input.
+        REQUIRE_NOTHROW(
+            vsag::Pyramid::CheckAndMappingExternalParam(make(graph_type, "100"), common_param));
+    }
+}
+
 TEST_CASE("Pyramid validates explicit factor", "[ut][PyramidParameters]") {
     auto absent = vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":20}})");
     REQUIRE(absent.topk_factor == 0.0F);
