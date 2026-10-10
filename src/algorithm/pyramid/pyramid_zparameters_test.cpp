@@ -1026,6 +1026,27 @@ TEST_CASE("Pyramid bounds index_min_size on both entry points", "[ut][PyramidPar
     }
 }
 
+TEST_CASE("Pyramid reports the submitted ef_search value when it is negative",
+          "[ut][PyramidParameters]") {
+    // ef_search is stored as uint64_t. A negative input used to wrap at the assignment
+    // and the range check in KnnSearch then reported the wrapped value, so a caller who
+    // sent -1 saw a complaint about 18446744073709551615 and had no way to tell what
+    // was wrong. Rejecting the signed value keeps the message truthful.
+    REQUIRE_THROWS(vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":-1}})"));
+    REQUIRE_THROWS(vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":0}})"));
+
+    auto ok = vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":1}})");
+    REQUIRE(ok.ef_search == 1);
+
+    // The message names the value the caller actually sent.
+    try {
+        vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":-1}})");
+        FAIL("expected ef_search -1 to be rejected");
+    } catch (const std::exception& e) {
+        REQUIRE(std::string(e.what()).find("ef_search(-1)") != std::string::npos);
+    }
+}
+
 TEST_CASE("Pyramid validates explicit factor", "[ut][PyramidParameters]") {
     auto absent = vsag::PyramidSearchParameters::FromJson(R"({"pyramid":{"ef_search":20}})");
     REQUIRE(absent.topk_factor == 0.0F);

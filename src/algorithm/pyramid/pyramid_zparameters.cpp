@@ -510,7 +510,13 @@ PyramidSearchParameters::FromJson(const std::string& json_string) {
     CHECK_ARGUMENT(
         params[INDEX_PYRAMID].Contains(PYRAMID_PARAMETER_EF_SEARCH),
         fmt::format("parameters[{}] must contains {}", INDEX_PYRAMID, PYRAMID_PARAMETER_EF_SEARCH));
-    obj.ef_search = params[INDEX_PYRAMID][PYRAMID_PARAMETER_EF_SEARCH].GetInt();
+    // ef_search is a uint64_t, so a negative input would wrap here and the range check
+    // in KnnSearch would then report the wrapped value instead of what the caller sent.
+    // Reject it while the signed value is still available.
+    const auto ef_search_value = params[INDEX_PYRAMID][PYRAMID_PARAMETER_EF_SEARCH].GetInt();
+    CHECK_ARGUMENT(ef_search_value >= 1,
+                   fmt::format("ef_search({}) must be at least 1", ef_search_value));
+    obj.ef_search = static_cast<uint64_t>(ef_search_value);
     if (params[INDEX_PYRAMID].Contains(PYRAMID_PARAMETER_SUBINDEX_EF_SEARCH)) {
         obj.subindex_ef_search =
             params[INDEX_PYRAMID][PYRAMID_PARAMETER_SUBINDEX_EF_SEARCH].GetInt();
