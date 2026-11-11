@@ -141,12 +141,47 @@ target_link_libraries (eval_monitor_test PRIVATE
 
 add_dependencies (eval_monitor_test Catch2)
 
-# function tests
-file (GLOB FUNCTION_TESTS "test_*.cpp")
+# function tests — per-index executables for independent compilation
+function (vsag_add_functest_executable target index_dir)
+    set (options)
+    set (one_value_args)
+    set (multi_value_args SOURCES)
+    cmake_parse_arguments (ARG "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    file (GLOB _functest_sources "${index_dir}/*.cpp")
+    add_executable (${target}
+            ${_functest_sources}
+            $<TARGET_OBJECTS:fixtures_allocator>
+            $<TARGET_OBJECTS:fixtures_core>
+            $<TARGET_OBJECTS:fixtures_data>
+            $<TARGET_OBJECTS:fixtures_framework>
+    )
+
+    target_include_directories (${target} PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${index_dir}
+    )
+
+    target_link_libraries (${target} PRIVATE
+            Catch2::Catch2
+            vsag
+            simd
+            fmt::fmt
+            coverage_config
+    )
+    add_dependencies (${target} Catch2)
+endfunction ()
+
+# Flat functional tests (test_*.cpp directly under tests/)
+file (GLOB FLAT_FUNC_TESTS "test_*.cpp")
+# Exclude large per-index test files — they are built as separate executables below
+list (FILTER FLAT_FUNC_TESTS EXCLUDE REGEX "test_(hgraph|pyramid|ivf)\\.cpp$")
 file (GLOB FUNCTION_TEST_INDEX_SOURCES "test_index/*.cpp")
+set (OTHER_FUNC_TEST_SOURCES ${FLAT_FUNC_TESTS} ${FUNCTION_TEST_INDEX_SOURCES})
+
+# Aggregate functests binary for backward compatibility
 add_executable (functests
-        ${FUNCTION_TESTS}
-        ${FUNCTION_TEST_INDEX_SOURCES}
+        ${OTHER_FUNC_TEST_SOURCES}
         $<TARGET_OBJECTS:fixtures_allocator>
         $<TARGET_OBJECTS:fixtures_core>
         $<TARGET_OBJECTS:fixtures_data>
@@ -166,3 +201,52 @@ target_link_libraries (functests PRIVATE
         coverage_config
 )
 add_dependencies (functests Catch2)
+
+# Per-index functional test executables
+# Per-index functional test executables (hgraph, pyramid, ivf)
+# Each large test file is compiled into its own executable to reduce
+# link time and allow parallel compilation with the main functests.
+foreach (_idx IN ITEMS hgraph pyramid ivf)
+    add_executable (functest_${_idx}
+            test_${_idx}.cpp
+            ${FUNCTION_TEST_INDEX_SOURCES}
+            $<TARGET_OBJECTS:fixtures_allocator>
+            $<TARGET_OBJECTS:fixtures_core>
+            $<TARGET_OBJECTS:fixtures_data>
+            $<TARGET_OBJECTS:fixtures_framework>
+    )
+    target_include_directories (functest_${_idx} PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_index
+    )
+    target_link_libraries (functest_${_idx} PRIVATE
+            Catch2::Catch2WithMain
+            vsag
+            simd
+            fmt::fmt
+            coverage_config
+    )
+    add_dependencies (functest_${_idx} Catch2)
+endforeach ()
+
+# Phase 1 adapter smoke test (compile+link only; not part of functests)
+add_executable (adapter_smoke
+        test_adapter_smoke.cpp
+        ${FUNCTION_TEST_INDEX_SOURCES}
+        $<TARGET_OBJECTS:fixtures_allocator>
+        $<TARGET_OBJECTS:fixtures_core>
+        $<TARGET_OBJECTS:fixtures_data>
+        $<TARGET_OBJECTS:fixtures_framework>
+)
+target_include_directories (adapter_smoke PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_index
+)
+target_link_libraries (adapter_smoke PRIVATE
+        Catch2::Catch2WithMain
+        vsag
+        simd
+        fmt::fmt
+        coverage_config
+)
+# No parallel registration; compile+link gate only.
